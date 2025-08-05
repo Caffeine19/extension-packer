@@ -1,0 +1,13 @@
+{
+  "name": "custom-extension-pack-vue-3",
+  "displayName": "Custom Extension Pack(Vue3)",
+  "description": "custom extension pack for vue3",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "categories": [
+    "Extension Packs"
+  ],
+  "extensionPack": []
+}
