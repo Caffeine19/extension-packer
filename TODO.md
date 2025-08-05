@@ -1,0 +1,2 @@
+- show related pack tags in the extension card
+- add a never add to pack extension list / ignored list
