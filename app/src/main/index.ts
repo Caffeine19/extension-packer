@@ -3,6 +3,14 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { getPrimaryInstalledExtensions } from './vscodeExtensions'
+import {
+  getExtensionPacks,
+  createExtensionPack,
+  updateExtensionPack,
+  addExtensionToPack,
+  removeExtensionFromPack,
+  buildExtensionPack
+} from './extension-packs'
 
 function createWindow(): void {
   // Create the browser window.
@@ -61,6 +69,86 @@ app.whenReady().then(() => {
     } catch (error) {
       console.error('Failed to get primary extensions:', error)
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  // Handle getting extension packs
+  ipcMain.handle('get-extension-packs', async () => {
+    try {
+      const packs = await getExtensionPacks()
+      return { success: true, data: packs }
+    } catch (error) {
+      console.error('Failed to get extension packs:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  // Handle creating extension pack
+  ipcMain.handle(
+    'create-extension-pack',
+    async (_, packName: string, displayName: string, description: string, extensions: string[]) => {
+      try {
+        const result = await createExtensionPack(packName, displayName, description, extensions)
+        return { success: result, data: result }
+      } catch (error) {
+        console.error('Failed to create extension pack:', error)
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+      }
+    }
+  )
+
+  // Handle updating extension pack
+  ipcMain.handle(
+    'update-extension-pack',
+    async (
+      _,
+      packName: string,
+      updates: { displayName?: string; description?: string; extensionPack?: string[] }
+    ) => {
+      try {
+        const result = await updateExtensionPack(packName, updates)
+        return { success: result, data: result }
+      } catch (error) {
+        console.error('Failed to update extension pack:', error)
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+      }
+    }
+  )
+
+  // Handle adding extension to pack
+  ipcMain.handle('add-extension-to-pack', async (_, packName: string, extensionId: string) => {
+    console.log('🚀 ~ index.ts:120 ~ packName:', packName, extensionId)
+    try {
+      const result = await addExtensionToPack(packName, extensionId)
+      return { success: result, data: result }
+    } catch (error) {
+      console.error('Failed to add extension to pack:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  // Handle removing extension from pack
+  ipcMain.handle('remove-extension-from-pack', async (_, packName: string, extensionId: string) => {
+    try {
+      const result = await removeExtensionFromPack(packName, extensionId)
+      return { success: result, data: result }
+    } catch (error) {
+      console.error('Failed to remove extension from pack:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  // Handle building extension pack
+  ipcMain.handle('build-extension-pack', async (_, packName: string) => {
+    try {
+      const result = await buildExtensionPack(packName)
+      return result
+    } catch (error) {
+      console.error('Failed to build extension pack:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
     }
   })
 

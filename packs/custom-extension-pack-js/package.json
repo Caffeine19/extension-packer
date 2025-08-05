@@ -10,6 +10,9 @@
     "Extension Packs"
   ],
   "extensionPack": [
-    "publisher.extensionName"
+    "publisher.extensionName",
+    "britesnow.vscode-toggle-quotes",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense"
   ]
 }

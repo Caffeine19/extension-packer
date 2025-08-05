@@ -1,4 +1,5 @@
 import type { Component } from 'solid-js'
+import { createSignal, Show, For } from 'solid-js'
 
 export interface ExtensionData {
   id: string
@@ -14,11 +15,28 @@ export interface ExtensionData {
   installedTimestamp?: number
 }
 
+export interface ExtensionPack {
+  name: string
+  displayName: string
+  description?: string
+  version: string
+  extensionPack: string[]
+  categories?: string[]
+  engines?: {
+    vscode: string
+  }
+  folderPath: string
+}
+
 interface ExtensionCardProps {
   extension: ExtensionData
+  availablePacks?: ExtensionPack[]
+  onAddToPack?: (extensionId: string, packName: string) => void
 }
 
 const ExtensionCard: Component<ExtensionCardProps> = (props) => {
+  const [showPackMenu, setShowPackMenu] = createSignal(false)
+
   const formatDate = (timestamp?: number): string => {
     if (!timestamp) return 'Unknown'
     return new Date(timestamp).toLocaleDateString()
@@ -28,6 +46,15 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
     return (
       props.extension.publisherDisplayName || props.extension.publisherId || 'Unknown Publisher'
     )
+  }
+
+  const handleAddToPack = (packName: string): void => {
+    props.onAddToPack?.(packName, props.extension.id)
+    setShowPackMenu(false)
+  }
+
+  const isExtensionInPack = (pack: ExtensionPack): boolean => {
+    return pack.extensionPack.includes(props.extension.id)
   }
 
   return (
@@ -88,6 +115,89 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
             ID: {props.extension.id}
           </p>
         </div>
+
+        {/* Add to Pack Button */}
+        <Show when={props.availablePacks && props.availablePacks.length > 0}>
+          <div class="relative flex-shrink-0">
+            <button
+              onClick={() => setShowPackMenu(!showPackMenu())}
+              class="px-3 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors flex items-center gap-2"
+              title="Add to extension pack"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              Add to Pack
+              <svg
+                class={`w-4 h-4 transition-transform ${showPackMenu() ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+
+            {/* Pack Selection Dropdown */}
+            <Show when={showPackMenu()}>
+              <div class="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <div class="py-2">
+                  <div class="px-3 py-2 text-sm font-medium text-gray-700 border-b">
+                    Select Extension Pack
+                  </div>
+                  <For each={props.availablePacks}>
+                    {(pack) => (
+                      <button
+                        onClick={() => handleAddToPack(pack.name)}
+                        disabled={isExtensionInPack(pack)}
+                        class={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center justify-between ${
+                          isExtensionInPack(pack)
+                            ? 'text-gray-400 cursor-not-allowed'
+                            : 'text-gray-700 hover:text-gray-900'
+                        }`}
+                        title={
+                          isExtensionInPack(pack)
+                            ? 'Extension already in this pack'
+                            : `Add to ${pack.displayName}`
+                        }
+                      >
+                        <div class="flex-1 min-w-0">
+                          <div class="truncate font-medium">{pack.displayName}</div>
+                          <div class="text-xs text-gray-500 truncate">
+                            {pack.extensionPack.length} extensions
+                          </div>
+                        </div>
+                        <Show when={isExtensionInPack(pack)}>
+                          <svg
+                            class="w-4 h-4 text-green-500"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clip-rule="evenodd"
+                            />
+                          </svg>
+                        </Show>
+                      </button>
+                    )}
+                  </For>
+                </div>
+              </div>
+            </Show>
+          </div>
+        </Show>
       </div>
     </div>
   )

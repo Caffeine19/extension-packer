@@ -1,11 +1,13 @@
 import type { Component } from 'solid-js'
 import { For, Show } from 'solid-js'
-import ExtensionCard, { type ExtensionData } from './ExtensionCard'
+import ExtensionCard, { type ExtensionData, type ExtensionPack } from './ExtensionCard'
 
 interface ExtensionListProps {
   extensions: ExtensionData[]
   title?: string
   showCount?: boolean
+  availablePacks?: ExtensionPack[]
+  onAddToPack?: (extensionId: string, packName: string) => void
 }
 
 const ExtensionList: Component<ExtensionListProps> = (props) => {
@@ -34,7 +36,13 @@ const ExtensionList: Component<ExtensionListProps> = (props) => {
       >
         <div class="grid gap-4">
           <For each={props.extensions}>
-            {(extension) => <ExtensionCard extension={extension} />}
+            {(extension) => (
+              <ExtensionCard
+                extension={extension}
+                availablePacks={props.availablePacks}
+                onAddToPack={props.onAddToPack}
+              />
+            )}
           </For>
         </div>
       </Show>
