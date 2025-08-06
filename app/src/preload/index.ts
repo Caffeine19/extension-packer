@@ -1,5 +1,5 @@
-import { contextBridge, ipcRenderer } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
+import { contextBridge, ipcRenderer } from 'electron';
+import { electronAPI } from '@electron-toolkit/preload';
 
 // Custom APIs for renderer
 const api = {
@@ -20,7 +20,13 @@ const api = {
     ipcRenderer.invoke('add-extension-to-pack', packName, extensionId),
   removeExtensionFromPack: (packName: string, extensionId: string) =>
     ipcRenderer.invoke('remove-extension-from-pack', packName, extensionId),
-  buildExtensionPack: (packName: string) => ipcRenderer.invoke('build-extension-pack', packName)
+  buildExtensionPack: (packName: string) => ipcRenderer.invoke('build-extension-pack', packName),
+  // Ignored extensions APIs
+  getIgnoredExtensions: () => ipcRenderer.invoke('get-ignored-extensions'),
+  addToIgnoredList: (extensionId: string) => ipcRenderer.invoke('add-to-ignored-list', extensionId),
+  removeFromIgnoredList: (extensionId: string) => ipcRenderer.invoke('remove-from-ignored-list', extensionId),
+  isExtensionIgnored: (extensionId: string) => ipcRenderer.invoke('is-extension-ignored', extensionId),
+  clearIgnoredExtensions: () => ipcRenderer.invoke('clear-ignored-extensions')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

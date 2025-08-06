@@ -10,7 +10,14 @@ import {
   addExtensionToPack,
   removeExtensionFromPack,
   buildExtensionPack
-} from './extension-packs'
+} from './extensionPacks'
+import {
+  getIgnoredExtensions,
+  addToIgnoredList,
+  removeFromIgnoredList,
+  isExtensionIgnored,
+  clearIgnoredExtensions
+} from './ignoredExtensions'
 
 function createWindow(): void {
   // Create the browser window.
@@ -149,6 +156,61 @@ app.whenReady().then(() => {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       }
+    }
+  })
+
+  // Handle getting ignored extensions
+  ipcMain.handle('get-ignored-extensions', async () => {
+    try {
+      const ignoredExtensions = await getIgnoredExtensions()
+      return { success: true, data: ignoredExtensions }
+    } catch (error) {
+      console.error('Failed to get ignored extensions:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  // Handle adding extension to ignored list
+  ipcMain.handle('add-to-ignored-list', async (_, extensionId: string) => {
+    try {
+      const result = await addToIgnoredList(extensionId)
+      return { success: result, data: result }
+    } catch (error) {
+      console.error('Failed to add extension to ignored list:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  // Handle removing extension from ignored list
+  ipcMain.handle('remove-from-ignored-list', async (_, extensionId: string) => {
+    try {
+      const result = await removeFromIgnoredList(extensionId)
+      return { success: result, data: result }
+    } catch (error) {
+      console.error('Failed to remove extension from ignored list:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  // Handle checking if extension is ignored
+  ipcMain.handle('is-extension-ignored', async (_, extensionId: string) => {
+    try {
+      const isIgnored = await isExtensionIgnored(extensionId)
+      return { success: true, data: isIgnored }
+    } catch (error) {
+      console.error('Failed to check if extension is ignored:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  // Handle clearing all ignored extensions
+  ipcMain.handle('clear-ignored-extensions', async () => {
+    try {
+      const result = await clearIgnoredExtensions()
+      return { success: result, data: result }
+    } catch (error) {
+      console.error('Failed to clear ignored extensions:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
   })
 

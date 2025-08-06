@@ -59,6 +59,12 @@ interface ExtensionAPI {
   buildExtensionPack: (
     packName: string
   ) => Promise<{ success: boolean; outputPath?: string; error?: string }>
+  // Ignored extensions APIs
+  getIgnoredExtensions: () => Promise<{ success: boolean; data?: string[]; error?: string }>
+  addToIgnoredList: (extensionId: string) => Promise<{ success: boolean; data?: boolean; error?: string }>
+  removeFromIgnoredList: (extensionId: string) => Promise<{ success: boolean; data?: boolean; error?: string }>
+  isExtensionIgnored: (extensionId: string) => Promise<{ success: boolean; data?: boolean; error?: string }>
+  clearIgnoredExtensions: () => Promise<{ success: boolean; data?: boolean; error?: string }>
 }
 
 declare global {
