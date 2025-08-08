@@ -10,17 +10,15 @@ import {
   addExtensionToPack,
   removeExtensionFromPack,
   buildExtensionPack
-} from './extension-packs'
+} from './extensionPacks'
 import {
   AddExtensionToPack,
   BuildExtensionPack,
   CreateExtensionPack,
   GetExtensionPacks,
   RemoveExtensionFromPack,
-  UpdateExtensionPack,
-  type ExtensionPack
+  UpdateExtensionPack
 } from '@shared/pack'
-import type { Result } from '@shared/result'
 import type { GetPrimaryExtensions, GetInstalledExtensions } from '@shared/extension'
 import { defineIPC, IPCChannel } from './utils/defineIPC'
 
@@ -114,8 +112,8 @@ app.whenReady().then(() => {
     IPCChannel.CREATE_EXTENSION_PACK,
     async (_, packName, displayName, description, extensions) => {
       try {
-        const ok = await createExtensionPack(packName, displayName, description, extensions)
-        return ok ? { success: true, data: true } : { success: false, msg: 'Create pack failed' }
+        await createExtensionPack(packName, displayName, description, extensions)
+        return { success: true, data: true }
       } catch (error) {
         console.error('Failed to create extension pack:', error)
         return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
@@ -126,14 +124,10 @@ app.whenReady().then(() => {
   defineIPC.handle<UpdateExtensionPack>(
     ipcMain,
     IPCChannel.UPDATE_EXTENSION_PACK,
-    async (
-      _,
-      packName: ExtensionPack['name'],
-      updates: Partial<Pick<ExtensionPack, 'displayName' | 'description' | 'extensionPack'>>
-    ): Promise<Result<boolean>> => {
+    async (_, packName, updates) => {
       try {
-        const ok = await updateExtensionPack(packName, updates)
-        return ok ? { success: true, data: true } : { success: false, msg: 'Update pack failed' }
+        await updateExtensionPack(packName, updates)
+        return { success: true, data: true }
       } catch (error) {
         console.error('Failed to update extension pack:', error)
         return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
@@ -144,11 +138,11 @@ app.whenReady().then(() => {
   defineIPC.handle<AddExtensionToPack>(
     ipcMain,
     IPCChannel.ADD_EXTENSION_TO_PACK,
-    async (_, packName: ExtensionPack['name'], extensionId: string): Promise<Result<boolean>> => {
+    async (_, packName, extensionId) => {
       console.log('🚀 ~ index.ts ~ add-extension-to-pack:', packName, extensionId)
       try {
-        const ok = await addExtensionToPack(packName, extensionId)
-        return ok ? { success: true, data: true } : { success: false, msg: 'Add extension failed' }
+        await addExtensionToPack(packName, extensionId)
+        return { success: true, data: true }
       } catch (error) {
         console.error('Failed to add extension to pack:', error)
         return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
@@ -159,12 +153,10 @@ app.whenReady().then(() => {
   defineIPC.handle<RemoveExtensionFromPack>(
     ipcMain,
     IPCChannel.REMOVE_EXTENSION_FROM_PACK,
-    async (_, packName: ExtensionPack['name'], extensionId: string): Promise<Result<boolean>> => {
+    async (_, packName, extensionId) => {
       try {
-        const ok = await removeExtensionFromPack(packName, extensionId)
-        return ok
-          ? { success: true, data: true }
-          : { success: false, msg: 'Remove extension failed' }
+        await removeExtensionFromPack(packName, extensionId)
+        return { success: true, data: true }
       } catch (error) {
         console.error('Failed to remove extension from pack:', error)
         return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
@@ -175,13 +167,10 @@ app.whenReady().then(() => {
   defineIPC.handle<BuildExtensionPack>(
     ipcMain,
     IPCChannel.BUILD_EXTENSION_PACK,
-    async (_, packName: ExtensionPack['name']): Promise<Result<{ outputPath: string }>> => {
+    async (_, packName) => {
       try {
         const result = await buildExtensionPack(packName)
-        if (result.success && result.outputPath) {
-          return { success: true, data: { outputPath: result.outputPath } }
-        }
-        return { success: false, msg: result.error ?? 'Build failed' }
+        return { success: true, data: { outputPath: result.outputPath } }
       } catch (error) {
         console.error('Failed to build extension pack:', error)
         return {
