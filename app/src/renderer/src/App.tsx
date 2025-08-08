@@ -1,43 +1,49 @@
 import type { Component } from 'solid-js'
-import { createSignal, Show, For } from 'solid-js'
+import { createSignal, Show, For, onMount } from 'solid-js'
 import ExtensionList from './components/ExtensionList'
 import PackCard from './components/PackCard'
 import type { ExtensionData } from './components/ExtensionCard'
 import { ExtensionPack } from '@shared/pack'
+import type { InstalledExtension } from '@shared/extension'
 
 const App: Component = () => {
   const [activeTab, setActiveTab] = createSignal<'extensions' | 'packs'>('extensions')
 
-  const [extensions, setExtensions] = createSignal<{
-    success: boolean
-    data?: ExtensionData[] | { [buildName: string]: ExtensionData[] }
-    error?: string
-  } | null>(null)
+  const [extensions, setExtensions] = createSignal<InstalledExtension[]>([])
+
+  const [error, setError] = createSignal<string>('')
 
   const [extensionPacks, setExtensionPacks] = createSignal<ExtensionPack[]>([])
 
-  const [loading, setLoading] = createSignal(false)
+  const [extensionLoading, setExtensionLoading] = createSignal(false)
+
   const [packLoading, setPackLoading] = createSignal(false)
 
   const handleGetExtensions = async (): Promise<void> => {
-    setLoading(true)
+    setExtensionLoading(true)
+    setError('')
     try {
       const result = await window.api.getPrimaryExtensions()
-      setExtensions(result)
-      console.log('Extensions result:', result)
+      if (result.success && result.data) {
+        setExtensions(result.data)
+        console.log('Extensions result:', result)
 
-      // Also load extension packs when extensions are loaded
-      // so "Add to Pack" buttons are available
-      if (extensionPacks().length === 0) {
-        await handleGetExtensionPacks()
+        if (extensionPacks().length === 0) {
+          await handleGetExtensionPacks()
+        }
+      } else {
+        setError(result.msg || 'Failed to get extensions')
+        setExtensions([])
       }
     } catch (error) {
       console.error('Failed to get extensions:', error)
-      setExtensions({ success: false, error: 'Failed to get extensions' })
+      setError('Failed to get extensions')
+      setExtensions([])
     } finally {
-      setLoading(false)
+      setExtensionLoading(false)
     }
   }
+  onMount(() => handleGetExtensions())
 
   const handleGetExtensionPacks = async (): Promise<void> => {
     setPackLoading(true)
@@ -57,6 +63,7 @@ const App: Component = () => {
       setPackLoading(false)
     }
   }
+  onMount(() => handleGetExtensionPacks())
 
   const handleAddExtensionToPack = async (packName: string, extensionId: string): Promise<void> => {
     try {
@@ -70,21 +77,6 @@ const App: Component = () => {
       }
     } catch (error) {
       console.error('Failed to add extension to pack:', error)
-    }
-  }
-
-  const handleBuildPack = async (packName: string): Promise<void> => {
-    try {
-      const result = await window.api.buildExtensionPack(packName)
-      if (result.success && result.data?.outputPath) {
-        // Show success message with output path
-        alert(`Extension pack built successfully!\nOutput file: ${result.data.outputPath}`)
-      } else {
-        alert(`Failed to build extension pack: ${result.msg || 'Unknown error'}`)
-      }
-    } catch (error) {
-      console.error('Failed to build extension pack:', error)
-      alert(`Failed to build extension pack: ${error}`)
     }
   }
 
@@ -125,18 +117,18 @@ const App: Component = () => {
           <div class="action">
             <button
               onClick={handleGetExtensions}
-              disabled={loading()}
+              disabled={extensionLoading()}
               class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading() ? 'Loading...' : 'Get VS Code Extensions'}
+              {extensionLoading() ? 'Loading...' : 'Get VS Code Extensions'}
             </button>
           </div>
         </div>
 
-        <Show when={extensions()}>
+        <Show when={extensions().length > 0 || error()}>
           <div class="mt-8">
             <Show
-              when={extensions()?.success}
+              when={!error()}
               fallback={
                 <div class="bg-red-50 border border-red-200 rounded-lg p-4">
                   <div class="flex items-center">
@@ -151,40 +143,19 @@ const App: Component = () => {
                     </div>
                     <div>
                       <h3 class="text-red-800 font-medium">Error loading extensions</h3>
-                      <p class="text-red-700 text-sm mt-1">{extensions()?.error}</p>
+                      <p class="text-red-700 text-sm mt-1">{error()}</p>
                     </div>
                   </div>
                 </div>
               }
             >
-              <Show when={Array.isArray(extensions()?.data)}>
-                <ExtensionList
-                  extensions={extensions()?.data as ExtensionData[]}
-                  title="VS Code Extensions"
-                  showCount={true}
-                  availablePacks={extensionPacks()}
-                  onAddToPack={handleAddExtensionToPack}
-                />
-              </Show>
-              <Show when={!Array.isArray(extensions()?.data)}>
-                <div class="space-y-6">
-                  <For
-                    each={Object.entries(
-                      (extensions()?.data as { [key: string]: ExtensionData[] }) || {}
-                    )}
-                  >
-                    {([buildName, exts]) => (
-                      <ExtensionList
-                        extensions={exts}
-                        title={buildName}
-                        showCount={true}
-                        availablePacks={extensionPacks()}
-                        onAddToPack={handleAddExtensionToPack}
-                      />
-                    )}
-                  </For>
-                </div>
-              </Show>
+              <ExtensionList
+                extensions={extensions() as ExtensionData[]}
+                title="VS Code Extensions"
+                showCount={true}
+                availablePacks={extensionPacks()}
+                onAddToPack={handleAddExtensionToPack}
+              />
             </Show>
           </div>
         </Show>
@@ -232,16 +203,7 @@ const App: Component = () => {
             }
           >
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <For each={extensionPacks()}>
-                {(pack) => (
-                  <PackCard
-                    pack={pack}
-                    onEdit={(pack) => console.log('Edit pack:', pack)}
-                    onDelete={(pack) => console.log('Delete pack:', pack)}
-                    onBuild={(packName) => handleBuildPack(packName)}
-                  />
-                )}
-              </For>
+              <For each={extensionPacks()}>{(pack) => <PackCard pack={pack} />}</For>
             </div>
           </Show>
         </div>

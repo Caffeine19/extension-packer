@@ -3,6 +3,7 @@ import * as path from 'path'
 import * as os from 'os'
 import type { InstalledExtension } from '@shared/extension'
 
+// copy from raycast/vscode extension, no need to modify this file
 // @link https://github.com/raycast/extensions/blob/48e820c8fe382b16cf90f3ddea95e7e7e7819c3e/extensions/visual-studio-code-recent-projects/src/lib/vscode.ts
 
 // VS Code extension metadata interfaces

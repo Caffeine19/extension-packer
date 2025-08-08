@@ -16,9 +16,6 @@ interface ExtensionPack {
 
 interface PackCardProps {
   pack: ExtensionPack
-  onEdit?: (pack: ExtensionPack) => void
-  onDelete?: (pack: ExtensionPack) => void
-  onBuild?: (packName: string) => void
 }
 
 const PackCard: Component<PackCardProps> = (props) => {
@@ -40,6 +37,25 @@ const PackCard: Component<PackCardProps> = (props) => {
     }
   }
 
+  const handleBuildPack = async (packName: string): Promise<void> => {
+    try {
+      const result = await window.api.buildExtensionPack(packName)
+      if (result.success && result.data?.outputPath) {
+        // Show success message with output path
+        alert(`Extension pack built successfully!\nOutput file: ${result.data.outputPath}`)
+      } else {
+        alert(`Failed to build extension pack: ${result.msg || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Failed to build extension pack:', error)
+      alert(`Failed to build extension pack: ${error}`)
+    }
+  }
+
+  const handleDelete = () => {}
+
+  const handleEdit = () => {}
+
   return (
     <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow">
       <div class="flex justify-between items-start mb-4">
@@ -54,9 +70,9 @@ const PackCard: Component<PackCardProps> = (props) => {
         </div>
 
         <div class="flex gap-2 ml-4">
-          {props.onEdit && (
+          {
             <button
-              onClick={() => props.onEdit?.(props.pack)}
+              onClick={() => handleEdit()}
               class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
               title="Edit pack"
             >
@@ -69,10 +85,10 @@ const PackCard: Component<PackCardProps> = (props) => {
                 />
               </svg>
             </button>
-          )}
-          {props.onDelete && (
+          }
+          {
             <button
-              onClick={() => props.onDelete?.(props.pack)}
+              onClick={() => handleDelete()}
               class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
               title="Delete pack"
             >
@@ -85,7 +101,7 @@ const PackCard: Component<PackCardProps> = (props) => {
                 />
               </svg>
             </button>
-          )}
+          }
         </div>
       </div>
 
@@ -147,15 +163,13 @@ const PackCard: Component<PackCardProps> = (props) => {
 
         {/* Action Buttons */}
         <div class="flex gap-2">
-          {props.onBuild && (
-            <button
-              onClick={() => props.onBuild?.(props.pack.name)}
-              class="flex-1 px-3 py-2 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors"
-              title="Build this pack as .vsix file"
-            >
-              Build Pack
-            </button>
-          )}
+          <button
+            onClick={() => handleBuildPack(props.pack.name)}
+            class="flex-1 px-3 py-2 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors"
+            title="Build this pack as .vsix file"
+          >
+            Build Pack
+          </button>
         </div>
       </div>
     </div>
