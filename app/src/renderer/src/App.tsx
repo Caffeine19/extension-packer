@@ -3,29 +3,19 @@ import { createSignal, Show, For } from 'solid-js'
 import ExtensionList from './components/ExtensionList'
 import PackCard from './components/PackCard'
 import type { ExtensionData } from './components/ExtensionCard'
-
-// Use the same interface as defined in preload
-interface ExtensionPack {
-  name: string
-  displayName: string
-  description?: string
-  version: string
-  extensionPack: string[]
-  categories?: string[]
-  engines?: {
-    vscode: string
-  }
-  folderPath: string
-}
+import { ExtensionPack } from '@shared/pack'
 
 const App: Component = () => {
   const [activeTab, setActiveTab] = createSignal<'extensions' | 'packs'>('extensions')
+
   const [extensions, setExtensions] = createSignal<{
     success: boolean
     data?: ExtensionData[] | { [buildName: string]: ExtensionData[] }
     error?: string
   } | null>(null)
+
   const [extensionPacks, setExtensionPacks] = createSignal<ExtensionPack[]>([])
+
   const [loading, setLoading] = createSignal(false)
   const [packLoading, setPackLoading] = createSignal(false)
 
@@ -57,7 +47,7 @@ const App: Component = () => {
         setExtensionPacks(result.data)
         console.log('Extension packs result:', result.data)
       } else {
-        console.error('Failed to get extension packs:', result.error)
+        console.error('Failed to get extension packs:', result.msg)
         setExtensionPacks([])
       }
     } catch (error) {
@@ -76,7 +66,7 @@ const App: Component = () => {
         await handleGetExtensionPacks()
         console.log(`Successfully added ${extensionId} to ${packName}`)
       } else {
-        console.error('Failed to add extension to pack:', result.error)
+        console.error('Failed to add extension to pack:', result.msg)
       }
     } catch (error) {
       console.error('Failed to add extension to pack:', error)
@@ -86,11 +76,11 @@ const App: Component = () => {
   const handleBuildPack = async (packName: string): Promise<void> => {
     try {
       const result = await window.api.buildExtensionPack(packName)
-      if (result.success && result.outputPath) {
+      if (result.success && result.data?.outputPath) {
         // Show success message with output path
-        alert(`Extension pack built successfully!\nOutput file: ${result.outputPath}`)
+        alert(`Extension pack built successfully!\nOutput file: ${result.data.outputPath}`)
       } else {
-        alert(`Failed to build extension pack: ${result.error || 'Unknown error'}`)
+        alert(`Failed to build extension pack: ${result.msg || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Failed to build extension pack:', error)

@@ -1,19 +1,7 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import { app } from 'electron'
-
-export interface ExtensionPack {
-  name: string
-  displayName: string
-  description?: string
-  version: string
-  extensionPack: string[]
-  categories?: string[]
-  engines?: {
-    vscode: string
-  }
-  folderPath: string
-}
+import type { ExtensionPack } from '@shared/pack'
 
 /**
  * Get the packs directory path for both development and production
@@ -23,7 +11,7 @@ function getPacksDirectory(): string {
   if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
     return path.join(process.cwd(), '..', 'packs')
   }
-  
+
   // In production, packs are bundled with the app
   return path.join(process.resourcesPath, 'packs')
 }
@@ -91,7 +79,7 @@ export async function getExtensionPacks(): Promise<ExtensionPack[]> {
 /**
  * Get a specific extension pack by name
  */
-export async function getExtensionPack(packName: string): Promise<ExtensionPack | null> {
+export async function getExtensionPack(packName: ExtensionPack['name']): Promise<ExtensionPack | null> {
   const packs = await getExtensionPacks()
   return packs.find((pack) => pack.name === packName) || null
 }
@@ -100,7 +88,7 @@ export async function getExtensionPack(packName: string): Promise<ExtensionPack 
  * Create a new extension pack
  */
 export async function createExtensionPack(
-  packName: string,
+  packName: ExtensionPack['name'],
   displayName: string,
   description: string = '',
   extensions: string[] = []
@@ -158,7 +146,7 @@ ${extensions.length > 0 ? extensions.map((ext) => `- ${ext}`).join('\n') : '- No
  * Update an existing extension pack
  */
 export async function updateExtensionPack(
-  packName: string,
+  packName: ExtensionPack['name'],
   updates: Partial<Pick<ExtensionPack, 'displayName' | 'description' | 'extensionPack'>>
 ): Promise<boolean> {
   const pack = await getExtensionPack(packName)
@@ -190,7 +178,7 @@ export async function updateExtensionPack(
 /**
  * Add an extension to an existing pack
  */
-export async function addExtensionToPack(packName: string, extensionId: string): Promise<boolean> {
+export async function addExtensionToPack(packName: ExtensionPack['name'], extensionId: string): Promise<boolean> {
   const pack = await getExtensionPack(packName)
   if (!pack) {
     console.error(`Extension pack ${packName} not found`)
@@ -225,7 +213,7 @@ export async function addExtensionToPack(packName: string, extensionId: string):
  * Remove an extension from an existing pack
  */
 export async function removeExtensionFromPack(
-  packName: string,
+  packName: ExtensionPack['name'],
   extensionId: string
 ): Promise<boolean> {
   const pack = await getExtensionPack(packName)
@@ -259,7 +247,7 @@ export async function removeExtensionFromPack(
  * Build an extension pack - creates a .vsix file
  */
 export async function buildExtensionPack(
-  packName: string
+  packName: ExtensionPack['name']
 ): Promise<{ success: boolean; outputPath?: string; error?: string }> {
   const pack = await getExtensionPack(packName)
   if (!pack) {

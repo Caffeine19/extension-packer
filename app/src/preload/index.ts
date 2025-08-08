@@ -1,26 +1,28 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import type { ExtensionAPI } from '@shared/electronApi'
+import { IPCChannel } from '../main/utils/defineIPC'
 
 // Custom APIs for renderer
-const api = {
-  getPrimaryExtensions: () => ipcRenderer.invoke('get-primary-extensions'),
-  getInstalledExtensions: () => ipcRenderer.invoke('get-installed-extensions'),
-  getExtensionPacks: () => ipcRenderer.invoke('get-extension-packs'),
-  createExtensionPack: (
-    packName: string,
-    displayName: string,
-    description: string,
-    extensions: string[]
-  ) => ipcRenderer.invoke('create-extension-pack', packName, displayName, description, extensions),
-  updateExtensionPack: (
-    packName: string,
-    updates: { displayName?: string; description?: string; extensionPack?: string[] }
-  ) => ipcRenderer.invoke('update-extension-pack', packName, updates),
-  addExtensionToPack: (packName: string, extensionId: string) =>
-    ipcRenderer.invoke('add-extension-to-pack', packName, extensionId),
-  removeExtensionFromPack: (packName: string, extensionId: string) =>
-    ipcRenderer.invoke('remove-extension-from-pack', packName, extensionId),
-  buildExtensionPack: (packName: string) => ipcRenderer.invoke('build-extension-pack', packName)
+const api: ExtensionAPI = {
+  getPrimaryExtensions: () => ipcRenderer.invoke(IPCChannel.GET_PRIMARY_EXTENSIONS),
+  getInstalledExtensions: () => ipcRenderer.invoke(IPCChannel.GET_INSTALLED_EXTENSIONS),
+  getExtensionPacks: () => ipcRenderer.invoke(IPCChannel.GET_EXTENSION_PACKS),
+  createExtensionPack: (packName, displayName, description, extensions) =>
+    ipcRenderer.invoke(
+      IPCChannel.CREATE_EXTENSION_PACK,
+      packName,
+      displayName,
+      description,
+      extensions
+    ),
+  updateExtensionPack: (packName, updates) =>
+    ipcRenderer.invoke(IPCChannel.UPDATE_EXTENSION_PACK, packName, updates),
+  addExtensionToPack: (packName, extensionId) =>
+    ipcRenderer.invoke(IPCChannel.ADD_EXTENSION_TO_PACK, packName, extensionId),
+  removeExtensionFromPack: (packName, extensionId) =>
+    ipcRenderer.invoke(IPCChannel.REMOVE_EXTENSION_FROM_PACK, packName, extensionId),
+  buildExtensionPack: (packName) => ipcRenderer.invoke(IPCChannel.BUILD_EXTENSION_PACK, packName)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

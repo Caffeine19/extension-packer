@@ -1,6 +1,9 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import * as os from 'os'
+import type { InstalledExtension } from '@shared/extension'
+
+// @link https://github.com/raycast/extensions/blob/48e820c8fe382b16cf90f3ddea95e7e7e7819c3e/extensions/visual-studio-code-recent-projects/src/lib/vscode.ts
 
 // VS Code extension metadata interfaces
 interface ExtensionMetaRoot {
@@ -32,20 +35,6 @@ interface ExtensionMetadata {
   isPreReleaseVersion: boolean
   installedTimestamp?: number
   preRelease?: boolean
-}
-
-export interface InstalledExtension {
-  id: string
-  name: string
-  version: string
-  preRelease?: boolean
-  icon?: string
-  updated?: boolean
-  fsPath: string
-  publisherId?: string
-  publisherDisplayName?: string
-  preview?: boolean
-  installedTimestamp?: number
 }
 
 interface PackageJSONInfo {
