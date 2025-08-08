@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
+import { app } from 'electron'
 
 export interface ExtensionPack {
   name: string
@@ -15,10 +16,23 @@ export interface ExtensionPack {
 }
 
 /**
+ * Get the packs directory path for both development and production
+ */
+function getPacksDirectory(): string {
+  // In development, use the relative path
+  if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
+    return path.join(process.cwd(), '..', 'packs')
+  }
+  
+  // In production, packs are bundled with the app
+  return path.join(process.resourcesPath, 'packs')
+}
+
+/**
  * Get all extension packs from the packs directory
  */
 export async function getExtensionPacks(): Promise<ExtensionPack[]> {
-  const packsDir = path.join(process.cwd(), '..', 'packs')
+  const packsDir = getPacksDirectory()
 
   try {
     // Check if packs directory exists
@@ -91,7 +105,7 @@ export async function createExtensionPack(
   description: string = '',
   extensions: string[] = []
 ): Promise<boolean> {
-  const packsDir = path.join(process.cwd(), '..', 'packs')
+  const packsDir = getPacksDirectory()
   const packDir = path.join(packsDir, packName)
 
   try {
