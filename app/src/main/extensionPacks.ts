@@ -1,83 +1,103 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
+import { app } from 'electron'
+import type { ExtensionPack } from '@shared/pack'
+import { promisifyExec } from './utils/promisifyExec'
 
-export interface ExtensionPack {
-  name: string
-  displayName: string
-  description?: string
-  version: string
-  extensionPack: string[]
-  categories?: string[]
-  engines?: {
-    vscode: string
+/**
+ * Get the packs directory path for both development and production
+ */
+function getPacksDirectory(): string {
+  // In development, use the relative path
+  if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
+    return path.join(process.cwd(), '..', 'packs')
   }
-  folderPath: string
+
+  // In production, packs are bundled with the app
+  return path.join(process.resourcesPath, 'packs')
 }
 
 /**
  * Get all extension packs from the packs directory
  */
-export async function getExtensionPacks(): Promise<ExtensionPack[]> {
-  const packsDir = path.join(process.cwd(), '..', 'packs')
+export async function getExtensionPacks() {
+  const packs: ExtensionPack[] = []
 
-  try {
-    // Check if packs directory exists
-    const exists = await fs
-      .access(packsDir)
-      .then(() => true)
-      .catch(() => false)
-    if (!exists) {
-      console.warn('Packs directory not found:', packsDir)
-      return []
-    }
+  const packsDir = getPacksDirectory()
 
-    // Read all directories in packs folder
-    const entries = await fs.readdir(packsDir, { withFileTypes: true })
-    const packDirectories = entries.filter((entry) => entry.isDirectory())
-
-    const packs: ExtensionPack[] = []
-
-    for (const dir of packDirectories) {
-      const packPath = path.join(packsDir, dir.name)
-      const packageJsonPath = path.join(packPath, 'package.json')
-
-      try {
-        // Check if package.json exists
-        await fs.access(packageJsonPath)
-
-        // Read and parse package.json
-        const packageContent = await fs.readFile(packageJsonPath, 'utf-8')
-        const packageJson = JSON.parse(packageContent)
-
-        // Validate that it's an extension pack
-        if (packageJson.extensionPack && Array.isArray(packageJson.extensionPack)) {
-          packs.push({
-            name: packageJson.name || dir.name,
-            displayName: packageJson.displayName || packageJson.name || dir.name,
-            description: packageJson.description || '',
-            version: packageJson.version || '0.0.0',
-            extensionPack: packageJson.extensionPack,
-            categories: packageJson.categories || [],
-            engines: packageJson.engines,
-            folderPath: packPath
-          })
-        }
-      } catch (error) {
-        console.warn(`Failed to read package.json for pack ${dir.name}:`, error)
-      }
-    }
-
-    return packs.sort((a, b) => a.displayName.localeCompare(b.displayName))
-  } catch (error) {
-    console.error('Failed to read extension packs:', error)
-    return []
+  // Check if packs directory exists
+  const exists = await fs
+    .access(packsDir)
+    .then(() => true)
+    .catch(() => false)
+  if (!exists) {
+    throw new Error(`Packs directory not found: ${packsDir}`)
   }
+
+  // Read all directories in packs folder
+  const entries = await fs.readdir(packsDir, { withFileTypes: true })
+  const packDirectories = entries.filter((entry) => entry.isDirectory())
+
+  const failedPacks: Array<{ name: string; error: string }> = []
+
+  // Process all packs in parallel
+  const taskArr = packDirectories.map(async (dir) => {
+    const packPath = path.join(packsDir, dir.name)
+    const packageJsonPath = path.join(packPath, 'package.json')
+
+    // Check if package.json exists
+    await fs.access(packageJsonPath)
+
+    // Read and parse package.json
+    const packageContent = await fs.readFile(packageJsonPath, 'utf-8')
+    const packageJson = JSON.parse(packageContent)
+
+    // Validate that it's an extension pack
+    if (!packageJson.extensionPack || !Array.isArray(packageJson.extensionPack)) {
+      throw new Error(`Directory ${dir.name} is not a valid extension pack`)
+    }
+
+    return {
+      name: packageJson.name || dir.name,
+      displayName: packageJson.displayName || packageJson.name || dir.name,
+      description: packageJson.description || '',
+      version: packageJson.version || '0.0.0',
+      extensionPack: packageJson.extensionPack,
+      categories: packageJson.categories || [],
+      engines: packageJson.engines,
+      folderPath: packPath
+    }
+  })
+
+  const results = await Promise.allSettled(taskArr)
+
+  // Separate successful and failed results
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      packs.push(result.value)
+    } else {
+      failedPacks.push({
+        name: packDirectories[index].name,
+        error: result.reason instanceof Error ? result.reason.message : 'Unknown error'
+      })
+    }
+  })
+
+  // Throw custom error if any packs failed to load
+  if (failedPacks.length > 0) {
+    const failedPacksInfo = failedPacks.map((fp) => `${fp.name}: ${fp.error}`).join('; ')
+    throw new Error(`Failed to load ${failedPacks.length} extension pack(s): ${failedPacksInfo}`)
+  }
+
+  return packs.sort((a, b) => a.displayName.localeCompare(b.displayName))
 }
 
 /**
  * Get a specific extension pack by name
  */
-export async function getExtensionPack(packName: string): Promise<ExtensionPack | null> {
+export async function getExtensionPack(
+  packName: ExtensionPack['name']
+): Promise<ExtensionPack | null> {
   const packs = await getExtensionPacks()
   return packs.find((pack) => pack.name === packName) || null
 }
@@ -86,36 +106,35 @@ export async function getExtensionPack(packName: string): Promise<ExtensionPack 
  * Create a new extension pack
  */
 export async function createExtensionPack(
-  packName: string,
-  displayName: string,
-  description: string = '',
-  extensions: string[] = []
-): Promise<boolean> {
-  const packsDir = path.join(process.cwd(), '..', 'packs')
+  packName: ExtensionPack['name'],
+  displayName: ExtensionPack['displayName'],
+  description: ExtensionPack['description'],
+  extensions: ExtensionPack['extensionPack']
+): Promise<void> {
+  const packsDir = getPacksDirectory()
   const packDir = path.join(packsDir, packName)
 
-  try {
-    // Create pack directory
-    await fs.mkdir(packDir, { recursive: true })
+  // Create pack directory
+  await fs.mkdir(packDir, { recursive: true })
 
-    // Create package.json
-    const packageJson = {
-      name: packName,
-      displayName,
-      description,
-      version: '0.0.1',
-      engines: {
-        vscode: '^1.102.0'
-      },
-      categories: ['Extension Packs'],
-      extensionPack: extensions
-    }
+  // Create package.json
+  const packageJson = {
+    name: packName,
+    displayName,
+    description,
+    version: '0.0.1',
+    engines: {
+      vscode: '^1.102.0'
+    },
+    categories: ['Extension Packs'],
+    extensionPack: extensions
+  }
 
-    const packageJsonPath = path.join(packDir, 'package.json')
-    await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2))
+  const packageJsonPath = path.join(packDir, 'package.json')
+  await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2))
 
-    // Create README.md
-    const readmeContent = `# ${displayName}
+  // Create README.md
+  const readmeContent = `# ${displayName}
 
 ${description}
 
@@ -130,161 +149,121 @@ ${extensions.length > 0 ? extensions.map((ext) => `- ${ext}`).join('\n') : '- No
 3. The extension pack will be available in the Extensions view
 `
 
-    const readmePath = path.join(packDir, 'README.md')
-    await fs.writeFile(readmePath, readmeContent)
-
-    return true
-  } catch (error) {
-    console.error('Failed to create extension pack:', error)
-    return false
-  }
+  const readmePath = path.join(packDir, 'README.md')
+  await fs.writeFile(readmePath, readmeContent)
 }
 
 /**
  * Update an existing extension pack
  */
 export async function updateExtensionPack(
-  packName: string,
+  packName: ExtensionPack['name'],
   updates: Partial<Pick<ExtensionPack, 'displayName' | 'description' | 'extensionPack'>>
-): Promise<boolean> {
+): Promise<void> {
   const pack = await getExtensionPack(packName)
   if (!pack) {
-    console.error(`Extension pack ${packName} not found`)
-    return false
+    throw new Error(`Extension pack ${packName} not found`)
   }
 
-  try {
-    const packageJsonPath = path.join(pack.folderPath, 'package.json')
-    const packageContent = await fs.readFile(packageJsonPath, 'utf-8')
-    const packageJson = JSON.parse(packageContent)
+  const packageJsonPath = path.join(pack.folderPath, 'package.json')
+  const packageContent = await fs.readFile(packageJsonPath, 'utf-8')
+  const packageJson = JSON.parse(packageContent)
 
-    // Apply updates
-    if (updates.displayName) packageJson.displayName = updates.displayName
-    if (updates.description !== undefined) packageJson.description = updates.description
-    if (updates.extensionPack) packageJson.extensionPack = updates.extensionPack
+  // Apply updates
+  if (updates.displayName) packageJson.displayName = updates.displayName
+  if (updates.description !== undefined) packageJson.description = updates.description
+  if (updates.extensionPack) packageJson.extensionPack = updates.extensionPack
 
-    // Write back to file
-    await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2))
-
-    return true
-  } catch (error) {
-    console.error('Failed to update extension pack:', error)
-    return false
-  }
+  // Write back to file
+  await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2))
 }
 
 /**
  * Add an extension to an existing pack
  */
-export async function addExtensionToPack(packName: string, extensionId: string): Promise<boolean> {
+export async function addExtensionToPack(
+  packName: ExtensionPack['name'],
+  extensionId: string
+): Promise<void> {
   const pack = await getExtensionPack(packName)
   if (!pack) {
-    console.error(`Extension pack ${packName} not found`)
-    return false
+    throw new Error(`Extension pack ${packName} not found`)
   }
 
-  try {
-    const packageJsonPath = path.join(pack.folderPath, 'package.json')
-    const packageContent = await fs.readFile(packageJsonPath, 'utf-8')
-    const packageJson = JSON.parse(packageContent)
+  const packageJsonPath = path.join(pack.folderPath, 'package.json')
+  const packageContent = await fs.readFile(packageJsonPath, 'utf-8')
+  const packageJson = JSON.parse(packageContent)
 
-    // Check if extension is already in the pack
-    if (packageJson.extensionPack.includes(extensionId)) {
-      console.warn(`Extension ${extensionId} is already in pack ${packName}`)
-      return true // Not an error, just already exists
-    }
-
-    // Add the extension
-    packageJson.extensionPack.push(extensionId)
-
-    // Write back to file
-    await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2))
-
-    return true
-  } catch (error) {
-    console.error('Failed to add extension to pack:', error)
-    return false
+  // Check if extension is already in the pack
+  if (packageJson.extensionPack.includes(extensionId)) {
+    console.warn(`Extension ${extensionId} is already in pack ${packName}`)
+    return // Not an error, just already exists
   }
+
+  // Add the extension
+  packageJson.extensionPack.push(extensionId)
+
+  // Write back to file
+  await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2))
 }
 
 /**
  * Remove an extension from an existing pack
  */
 export async function removeExtensionFromPack(
-  packName: string,
+  packName: ExtensionPack['name'],
   extensionId: string
-): Promise<boolean> {
+): Promise<void> {
   const pack = await getExtensionPack(packName)
   if (!pack) {
-    console.error(`Extension pack ${packName} not found`)
-    return false
+    throw new Error(`Extension pack ${packName} not found`)
   }
 
-  try {
-    const packageJsonPath = path.join(pack.folderPath, 'package.json')
-    const packageContent = await fs.readFile(packageJsonPath, 'utf-8')
-    const packageJson = JSON.parse(packageContent)
+  const packageJsonPath = path.join(pack.folderPath, 'package.json')
+  const packageContent = await fs.readFile(packageJsonPath, 'utf-8')
+  const packageJson = JSON.parse(packageContent)
 
-    // Remove the extension
-    const index = packageJson.extensionPack.indexOf(extensionId)
-    if (index > -1) {
-      packageJson.extensionPack.splice(index, 1)
-    }
-
-    // Write back to file
-    await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2))
-
-    return true
-  } catch (error) {
-    console.error('Failed to remove extension from pack:', error)
-    return false
+  // Remove the extension
+  const index = packageJson.extensionPack.indexOf(extensionId)
+  if (index > -1) {
+    packageJson.extensionPack.splice(index, 1)
   }
+
+  // Write back to file
+  await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2))
 }
 
 /**
  * Build an extension pack - creates a .vsix file
  */
 export async function buildExtensionPack(
-  packName: string
-): Promise<{ success: boolean; outputPath?: string; error?: string }> {
+  packName: ExtensionPack['name']
+): Promise<{ outputPath: string }> {
   const pack = await getExtensionPack(packName)
   if (!pack) {
-    return { success: false, error: `Extension pack ${packName} not found` }
+    throw new Error(`Extension pack ${packName} not found`)
   }
 
-  try {
-    const { exec } = await import('child_process')
-    const { promisify } = await import('util')
-    const execAsync = promisify(exec)
+  // Build the pack using vsce
+  const buildCommand = `cd "${pack.folderPath}" && npx vsce package`
 
-    // Build the pack using vsce
-    const buildCommand = `cd "${pack.folderPath}" && npx vsce package`
+  console.log(`Building extension pack: ${buildCommand}`)
+  const { stdout, stderr } = await promisifyExec(buildCommand)
 
-    console.log(`Building extension pack: ${buildCommand}`)
-    const { stdout, stderr } = await execAsync(buildCommand)
-
-    if (stderr && !stderr.includes('WARNING')) {
-      console.error('Build stderr:', stderr)
-      return { success: false, error: stderr }
-    }
-
-    console.log('Build stdout:', stdout)
-
-    // Find the output .vsix file
-    const vsixFiles = await fs.readdir(pack.folderPath)
-    const vsixFile = vsixFiles.find((file) => file.endsWith('.vsix'))
-
-    if (vsixFile) {
-      const outputPath = path.join(pack.folderPath, vsixFile)
-      return { success: true, outputPath }
-    } else {
-      return { success: false, error: 'No .vsix file found after build' }
-    }
-  } catch (error) {
-    console.error('Failed to build extension pack:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown build error'
-    }
+  if (stderr && !stderr.includes('WARNING')) {
+    throw new Error(`Build failed: ${stderr}`)
   }
+
+  console.log('Build stdout:', stdout)
+
+  // Find the output .vsix file
+  const vsixFiles = await fs.readdir(pack.folderPath)
+  const vsixFile = vsixFiles.find((file) => file.endsWith('.vsix'))
+
+  if (!vsixFile) {
+    throw new Error('No .vsix file found after build')
+  }
+
+  const outputPath = path.join(pack.folderPath, vsixFile)
+  return { outputPath }
 }

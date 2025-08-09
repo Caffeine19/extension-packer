@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { getPrimaryInstalledExtensions } from './vscodeExtensions'
+import { getPrimaryInstalledExtensions, getInstalledExtensions } from './vscodeExtensions'
 import {
   getExtensionPacks,
   createExtensionPack,
@@ -12,12 +12,15 @@ import {
   buildExtensionPack
 } from './extensionPacks'
 import {
-  getIgnoredExtensions,
-  addToIgnoredList,
-  removeFromIgnoredList,
-  isExtensionIgnored,
-  clearIgnoredExtensions
-} from './ignoredExtensions'
+  AddExtensionToPack,
+  BuildExtensionPack,
+  CreateExtensionPack,
+  GetExtensionPacks,
+  RemoveExtensionFromPack,
+  UpdateExtensionPack
+} from '@shared/pack'
+import type { GetPrimaryExtensions, GetInstalledExtensions } from '@shared/extension'
+import { defineIPC, IPCChannel } from './utils/defineIPC'
 
 function createWindow(): void {
   // Create the browser window.
@@ -65,99 +68,118 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC handlers
-  ipcMain.on('ping', () => console.log('pong'))
+  defineIPC.on<(message: string) => string>(ipcMain, IPCChannel.PING, (_, message) => {
+    console.log('Received ping:', message)
+    return 'PONG'
+  })
 
-  // Handle getting primary VS Code extensions only
-  ipcMain.handle('get-primary-extensions', async () => {
+  defineIPC.handle<GetPrimaryExtensions>(ipcMain, IPCChannel.GET_PRIMARY_EXTENSIONS, async () => {
     try {
       const extensions = await getPrimaryInstalledExtensions()
       return { success: true, data: extensions }
     } catch (error) {
       console.error('Failed to get primary extensions:', error)
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+      return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
     }
   })
 
-  // Handle getting extension packs
-  ipcMain.handle('get-extension-packs', async () => {
+  defineIPC.handle<GetInstalledExtensions>(
+    ipcMain,
+    IPCChannel.GET_INSTALLED_EXTENSIONS,
+    async () => {
+      try {
+        const extensions = await getInstalledExtensions()
+        return { success: true, data: extensions }
+      } catch (error) {
+        console.error('Failed to get installed extensions:', error)
+        return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
+      }
+    }
+  )
+
+  defineIPC.handle<GetExtensionPacks>(ipcMain, IPCChannel.GET_EXTENSION_PACKS, async () => {
     try {
       const packs = await getExtensionPacks()
       return { success: true, data: packs }
     } catch (error) {
       console.error('Failed to get extension packs:', error)
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+      return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
     }
   })
 
-  // Handle creating extension pack
-  ipcMain.handle(
-    'create-extension-pack',
-    async (_, packName: string, displayName: string, description: string, extensions: string[]) => {
+  defineIPC.handle<CreateExtensionPack>(
+    ipcMain,
+    IPCChannel.CREATE_EXTENSION_PACK,
+    async (_, packName, displayName, description, extensions) => {
       try {
-        const result = await createExtensionPack(packName, displayName, description, extensions)
-        return { success: result, data: result }
+        await createExtensionPack(packName, displayName, description, extensions)
+        return { success: true, data: true }
       } catch (error) {
         console.error('Failed to create extension pack:', error)
-        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+        return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
       }
     }
   )
 
-  // Handle updating extension pack
-  ipcMain.handle(
-    'update-extension-pack',
-    async (
-      _,
-      packName: string,
-      updates: { displayName?: string; description?: string; extensionPack?: string[] }
-    ) => {
+  defineIPC.handle<UpdateExtensionPack>(
+    ipcMain,
+    IPCChannel.UPDATE_EXTENSION_PACK,
+    async (_, packName, updates) => {
       try {
-        const result = await updateExtensionPack(packName, updates)
-        return { success: result, data: result }
+        await updateExtensionPack(packName, updates)
+        return { success: true, data: true }
       } catch (error) {
         console.error('Failed to update extension pack:', error)
-        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+        return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
       }
     }
   )
 
-  // Handle adding extension to pack
-  ipcMain.handle('add-extension-to-pack', async (_, packName: string, extensionId: string) => {
-    console.log('🚀 ~ index.ts:120 ~ packName:', packName, extensionId)
-    try {
-      const result = await addExtensionToPack(packName, extensionId)
-      return { success: result, data: result }
-    } catch (error) {
-      console.error('Failed to add extension to pack:', error)
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
-    }
-  })
-
-  // Handle removing extension from pack
-  ipcMain.handle('remove-extension-from-pack', async (_, packName: string, extensionId: string) => {
-    try {
-      const result = await removeExtensionFromPack(packName, extensionId)
-      return { success: result, data: result }
-    } catch (error) {
-      console.error('Failed to remove extension from pack:', error)
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
-    }
-  })
-
-  // Handle building extension pack
-  ipcMain.handle('build-extension-pack', async (_, packName: string) => {
-    try {
-      const result = await buildExtensionPack(packName)
-      return result
-    } catch (error) {
-      console.error('Failed to build extension pack:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+  defineIPC.handle<AddExtensionToPack>(
+    ipcMain,
+    IPCChannel.ADD_EXTENSION_TO_PACK,
+    async (_, packName, extensionId) => {
+      console.log('🚀 ~ index.ts ~ add-extension-to-pack:', packName, extensionId)
+      try {
+        await addExtensionToPack(packName, extensionId)
+        return { success: true, data: true }
+      } catch (error) {
+        console.error('Failed to add extension to pack:', error)
+        return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
       }
     }
-  })
+  )
+
+  defineIPC.handle<RemoveExtensionFromPack>(
+    ipcMain,
+    IPCChannel.REMOVE_EXTENSION_FROM_PACK,
+    async (_, packName, extensionId) => {
+      try {
+        await removeExtensionFromPack(packName, extensionId)
+        return { success: true, data: true }
+      } catch (error) {
+        console.error('Failed to remove extension from pack:', error)
+        return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
+      }
+    }
+  )
+
+  defineIPC.handle<BuildExtensionPack>(
+    ipcMain,
+    IPCChannel.BUILD_EXTENSION_PACK,
+    async (_, packName) => {
+      try {
+        const result = await buildExtensionPack(packName)
+        return { success: true, data: { outputPath: result.outputPath } }
+      } catch (error) {
+        console.error('Failed to build extension pack:', error)
+        return {
+          success: false,
+          msg: error instanceof Error ? error.message : 'Unknown error'
+        }
+      }
+    }
+  )
 
   // Handle getting ignored extensions
   ipcMain.handle('get-ignored-extensions', async () => {
