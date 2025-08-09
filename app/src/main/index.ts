@@ -11,10 +11,7 @@ import {
   removeExtensionFromPack,
   buildExtensionPack
 } from './extensionPacks'
-import {
-  getIgnoredExtensions,
-  toggleIgnoredExtension
-} from './ignoredExtensions'
+import { getIgnoredExtensions, toggleIgnoredExtension } from './ignoredExtensions'
 import {
   AddExtensionToPack,
   BuildExtensionPack,
@@ -23,10 +20,30 @@ import {
   RemoveExtensionFromPack,
   UpdateExtensionPack
 } from '@shared/pack'
-import type { GetPrimaryExtensions, GetInstalledExtensions, GetIgnoredExtensions, ToggleIgnoredExtension } from '@shared/extension'
+import type {
+  GetPrimaryExtensions,
+  GetInstalledExtensions,
+  GetIgnoredExtensions,
+  ToggleIgnoredExtension
+} from '@shared/extension'
 import { defineIPC, IPCChannel } from './utils/defineIPC'
 
 function createWindow(): void {
+  const vibrancyOptions: Electron.BrowserWindowConstructorOptions = {
+    vibrancy: 'under-window',
+    backgroundColor: '#00000000', // transparent hexadecimal or anything with transparency,
+    visualEffectState: 'followWindow'
+  }
+
+  const customTitleBarOptions: Electron.BrowserWindowConstructorOptions = {
+    titleBarOverlay: {
+      color: '#00000000',
+      symbolColor: '#000000',
+      height: 40
+    },
+    titleBarStyle: 'hidden'
+  }
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 900,
@@ -37,7 +54,10 @@ function createWindow(): void {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
-    }
+    },
+
+    ...customTitleBarOptions,
+    ...vibrancyOptions
   })
 
   mainWindow.on('ready-to-show', () => {

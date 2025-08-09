@@ -21,7 +21,7 @@ const IgnoredExtensionsView: Component<IgnoredExtensionsViewProps> = (props) => 
       return props.ignoredExtensions
     }
 
-    return props.ignoredExtensions.filter(extensionId =>
+    return props.ignoredExtensions.filter((extensionId) =>
       searchMultipleFields(query, [extensionId])
     )
   })
@@ -78,8 +78,18 @@ const IgnoredExtensionsView: Component<IgnoredExtensionsViewProps> = (props) => 
       <Show when={props.ignoredExtensions.length > 0}>
         <div class="relative">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              class="h-5 w-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           </div>
           <input
@@ -97,7 +107,12 @@ const IgnoredExtensionsView: Component<IgnoredExtensionsViewProps> = (props) => 
                 title="Clear search"
               >
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -110,12 +125,7 @@ const IgnoredExtensionsView: Component<IgnoredExtensionsViewProps> = (props) => 
         fallback={
           <div class="text-center py-12">
             <div class="text-gray-400 mb-4">
-              <svg
-                class="w-16 h-16 mx-auto"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -130,13 +140,16 @@ const IgnoredExtensionsView: Component<IgnoredExtensionsViewProps> = (props) => 
                 <div>
                   <h3 class="text-lg font-medium text-gray-900 mb-2">No ignored extensions</h3>
                   <p class="text-gray-500">
-                    Extensions marked as ignored will appear here and won't be available for adding to packs
+                    Extensions marked as ignored will appear here and won't be available for adding
+                    to packs
                   </p>
                 </div>
               }
             >
               <div>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">No extensions match your search</h3>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">
+                  No extensions match your search
+                </h3>
                 <p class="text-gray-500 mb-4">
                   Try adjusting your search terms or clearing the search.
                 </p>
@@ -182,8 +195,8 @@ const IgnoredExtensionsView: Component<IgnoredExtensionsViewProps> = (props) => 
           <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 class="text-lg font-medium text-gray-900 mb-4">Clear All Ignored Extensions?</h3>
             <p class="text-sm text-gray-500 mb-6">
-              This will remove all {props.ignoredExtensions.length} extensions from the ignored list.
-              They will become available for adding to extension packs again.
+              This will remove all {props.ignoredExtensions.length} extensions from the ignored
+              list. They will become available for adding to extension packs again.
             </p>
             <div class="flex gap-3">
               <button

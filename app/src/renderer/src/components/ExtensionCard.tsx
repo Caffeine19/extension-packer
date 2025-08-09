@@ -60,9 +60,9 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
   }
 
   const getPacksContainingExtension = (): ExtensionPack[] => {
-    return props.availablePacks?.filter(pack =>
-      pack.extensionPack.includes(props.extension.id)
-    ) || []
+    return (
+      props.availablePacks?.filter((pack) => pack.extensionPack.includes(props.extension.id)) || []
+    )
   }
 
   const handleToggleIgnore = async (): Promise<void> => {
@@ -71,9 +71,11 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
   }
 
   return (
-    <div class={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${
-      props.extension.isIgnored ? 'opacity-60 bg-gray-50' : ''
-    }`}>
+    <div
+      class={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${
+        props.extension.isIgnored ? 'opacity-60 bg-gray-50' : ''
+      }`}
+    >
       <div class="flex items-start gap-3">
         {/* Extension Icon */}
         <div class="flex-shrink-0">
@@ -81,7 +83,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
             <img
               src={props.extension.icon}
               alt={props.extension.name}
-              class="w-12 h-12 rounded"
+              class="w-12 h-12 rounded object-center  object-fill"
               onError={(e) => {
                 // Fallback to a default icon if image fails to load
                 e.currentTarget.style.display = 'none'
@@ -183,7 +185,11 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
           </button>
 
           {/* Add to Pack Button */}
-          <Show when={props.availablePacks && props.availablePacks.length > 0 && !props.extension.isIgnored}>
+          <Show
+            when={
+              props.availablePacks && props.availablePacks.length > 0 && !props.extension.isIgnored
+            }
+          >
             <div class="relative">
               <button
                 onClick={() => setShowPackMenu(!showPackMenu())}
@@ -267,9 +273,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
 
           {/* Ignored Extensions Message */}
           <Show when={props.extension.isIgnored}>
-            <div class="text-xs text-yellow-600 text-center italic">
-              Ignored extension
-            </div>
+            <div class="text-xs text-yellow-600 text-center italic">Ignored extension</div>
           </Show>
         </div>
       </div>

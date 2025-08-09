@@ -24,6 +24,8 @@
     "@ark-ui/solid": "^5.18.3",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "@phosphor-icons/web": "^2.1.2",
+    "@solidjs/router": "^0.15.3",
     "@tailwindcss/vite": "^4.1.11",
     "electron-updater": "^6.3.9",
     "tailwindcss": "^4.1.11"
