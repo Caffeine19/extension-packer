@@ -1,20 +1,23 @@
 import type { Component } from 'solid-js'
-import { createSignal, Show, For, onMount } from 'solid-js'
+import { createSignal, Show, For, onMount, createMemo } from 'solid-js'
 import ExtensionList from './components/ExtensionList'
 import PackCard from './components/PackCard'
 import IgnoredExtensionsView from './components/IgnoredExtensionsView'
 import type { ExtensionData } from './components/ExtensionCard'
 import { ExtensionPack } from '@shared/pack'
 import type { InstalledExtension } from '@shared/extension'
+import { searchMultipleFields, createDebouncedSetter } from './lib/searchUtils'
 
 const App: Component = () => {
-  const [activeTab, setActiveTab] = createSignal<'extensions' | 'packs'>('extensions')
+  const [activeTab, setActiveTab] = createSignal<'extensions' | 'packs' | 'ignored'>('extensions')
 
   const [extensions, setExtensions] = createSignal<InstalledExtension[]>([])
 
   const [error, setError] = createSignal<string>('')
 
   const [extensionPacks, setExtensionPacks] = createSignal<ExtensionPack[]>([])
+
+  const [ignoredExtensions, setIgnoredExtensions] = createSignal<string[]>([])
 
   const [extensionLoading, setExtensionLoading] = createSignal(false)
 
@@ -56,7 +59,18 @@ const App: Component = () => {
     try {
       const result = await window.api.getPrimaryExtensions()
       if (result.success && result.data) {
-        setExtensions(result.data)
+        // Get ignored extensions to mark them
+        const ignoredResult = await window.api.getIgnoredExtensions()
+        const ignoredIds = ignoredResult.success && ignoredResult.data ? ignoredResult.data : []
+        setIgnoredExtensions(ignoredIds)
+
+        // Mark extensions as ignored
+        const extensionsWithIgnored = result.data.map(ext => ({
+          ...ext,
+          isIgnored: ignoredIds.includes(ext.id)
+        }))
+
+        setExtensions(extensionsWithIgnored)
         console.log('Extensions result:', result)
 
         if (extensionPacks().length === 0) {
@@ -96,6 +110,9 @@ const App: Component = () => {
   }
   onMount(() => handleGetExtensionPacks())
 
+  // Load ignored extensions on mount
+  onMount(() => handleGetIgnoredExtensions())
+
   const handleAddExtensionToPack = async (packName: string, extensionId: string): Promise<void> => {
     try {
       const result = await window.api.addExtensionToPack(packName, extensionId)
@@ -108,6 +125,90 @@ const App: Component = () => {
       }
     } catch (error) {
       console.error('Failed to add extension to pack:', error)
+    }
+  }
+
+  // Ignored extensions management
+  const handleGetIgnoredExtensions = async (): Promise<void> => {
+    try {
+      const result = await window.api.getIgnoredExtensions()
+      if (result.success && result.data) {
+        setIgnoredExtensions(result.data)
+      } else {
+        console.error('Failed to get ignored extensions:', result.msg)
+        setIgnoredExtensions([])
+      }
+    } catch (error) {
+      console.error('Failed to get ignored extensions:', error)
+      setIgnoredExtensions([])
+    }
+  }
+
+  const handleToggleIgnore = async (extensionId: string, isIgnored: boolean): Promise<void> => {
+    try {
+      const result = await window.api.toggleIgnoredExtension(extensionId)
+
+      if (result.success) {
+        // The toggle function returns the new ignored status
+        const newIgnoredStatus = result.data
+
+        // Update the extension's ignored status locally
+        const updatedExtensions = extensions().map(ext =>
+          ext.id === extensionId ? { ...ext, isIgnored: newIgnoredStatus } : ext
+        )
+        setExtensions(updatedExtensions)
+
+        // Refresh ignored extensions list
+        await handleGetIgnoredExtensions()
+        console.log(`Successfully ${newIgnoredStatus ? 'added to' : 'removed from'} ignored list: ${extensionId}`)
+      } else {
+        console.error('Failed to toggle ignore status:', result.msg)
+      }
+    } catch (error) {
+      console.error('Failed to toggle ignore status:', error)
+    }
+  }
+
+  const handleRemoveFromIgnored = async (extensionId: string): Promise<void> => {
+    try {
+      // Use toggle to remove from ignored list - it will return false if it was ignored and is now removed
+      const result = await window.api.toggleIgnoredExtension(extensionId)
+      if (result.success) {
+        // Update local state
+        setIgnoredExtensions(ignored => ignored.filter(id => id !== extensionId))
+
+        // Update extension's ignored status if it's in the extensions list
+        const updatedExtensions = extensions().map(ext =>
+          ext.id === extensionId ? { ...ext, isIgnored: false } : ext
+        )
+        setExtensions(updatedExtensions)
+
+        console.log(`Successfully removed ${extensionId} from ignored list`)
+      } else {
+        console.error('Failed to remove from ignored list:', result.msg)
+      }
+    } catch (error) {
+      console.error('Failed to remove from ignored list:', error)
+    }
+  }
+
+  const handleClearAllIgnored = async (): Promise<void> => {
+    try {
+      const result = await window.api.clearIgnoredExtensions()
+      if (result.success) {
+        // Clear local ignored extensions
+        setIgnoredExtensions([])
+
+        // Update all extensions to not be ignored
+        const updatedExtensions = extensions().map(ext => ({ ...ext, isIgnored: false }))
+        setExtensions(updatedExtensions)
+
+        console.log('Successfully cleared all ignored extensions')
+      } else {
+        console.error('Failed to clear ignored extensions:', result.msg)
+      }
+    } catch (error) {
+      console.error('Failed to clear ignored extensions:', error)
     }
   }
 
@@ -201,6 +302,7 @@ const App: Component = () => {
                 showCount={true}
                 availablePacks={extensionPacks()}
                 onAddToPack={handleAddExtensionToPack}
+                onToggleIgnore={handleToggleIgnore}
               />
             </Show>
           </div>
@@ -316,7 +418,7 @@ const App: Component = () => {
             }
           >
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <For each={extensionPacks()}>{(pack) => <PackCard pack={pack} />}</For>
+              <For each={filteredExtensionPacks()}>{(pack) => <PackCard pack={pack} />}</For>
             </div>
           </Show>
         </div>

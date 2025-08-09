@@ -28,15 +28,17 @@ export async function loadIgnoredExtensions(): Promise<string[]> {
     return data.ignoredExtensions || []
   } catch (error) {
     // File doesn't exist or is corrupted, return empty array
-    console.log('No ignored extensions file found, starting with empty list')
-    return []
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return []
+    }
+    throw new Error(`Failed to load ignored extensions: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 
 /**
  * Save ignored extensions to file
  */
-export async function saveIgnoredExtensions(ignoredExtensions: string[]): Promise<boolean> {
+export async function saveIgnoredExtensions(ignoredExtensions: string[]): Promise<void> {
   try {
     const filePath = getIgnoredExtensionsFilePath()
     const data: IgnoredExtensionsData = {
@@ -44,10 +46,8 @@ export async function saveIgnoredExtensions(ignoredExtensions: string[]): Promis
       lastUpdated: new Date().toISOString()
     }
     await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8')
-    return true
   } catch (error) {
-    console.error('Failed to save ignored extensions:', error)
-    return false
+    throw new Error(`Failed to save ignored extensions: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 
@@ -61,40 +61,28 @@ export async function getIgnoredExtensions(): Promise<string[]> {
 /**
  * Add an extension to the ignored list
  */
-export async function addToIgnoredList(extensionId: string): Promise<boolean> {
-  try {
-    const ignoredExtensions = await loadIgnoredExtensions()
+export async function addToIgnoredList(extensionId: string): Promise<void> {
+  const ignoredExtensions = await loadIgnoredExtensions()
 
-    // Check if already ignored
-    if (ignoredExtensions.includes(extensionId)) {
-      return true // Already ignored, no need to add again
-    }
-
-    ignoredExtensions.push(extensionId)
-    return await saveIgnoredExtensions(ignoredExtensions)
-  } catch (error) {
-    console.error('Failed to add extension to ignored list:', error)
-    return false
+  // Check if already ignored
+  if (ignoredExtensions.includes(extensionId)) {
+    return // Already ignored, no need to add again
   }
+
+  ignoredExtensions.push(extensionId)
+  await saveIgnoredExtensions(ignoredExtensions)
 }
 
 /**
  * Remove an extension from the ignored list
  */
-export async function removeFromIgnoredList(extensionId: string): Promise<boolean> {
-  try {
-    const ignoredExtensions = await loadIgnoredExtensions()
-    const updatedList = ignoredExtensions.filter(id => id !== extensionId)
+export async function removeFromIgnoredList(extensionId: string): Promise<void> {
+  const ignoredExtensions = await loadIgnoredExtensions()
+  const updatedList = ignoredExtensions.filter(id => id !== extensionId)
 
-    // Only save if something was actually removed
-    if (updatedList.length !== ignoredExtensions.length) {
-      return await saveIgnoredExtensions(updatedList)
-    }
-
-    return true // Extension wasn't in the list anyway
-  } catch (error) {
-    console.error('Failed to remove extension from ignored list:', error)
-    return false
+  // Only save if something was actually removed
+  if (updatedList.length !== ignoredExtensions.length) {
+    await saveIgnoredExtensions(updatedList)
   }
 }
 
@@ -102,18 +90,31 @@ export async function removeFromIgnoredList(extensionId: string): Promise<boolea
  * Check if an extension is ignored
  */
 export async function isExtensionIgnored(extensionId: string): Promise<boolean> {
-  try {
-    const ignoredExtensions = await loadIgnoredExtensions()
-    return ignoredExtensions.includes(extensionId)
-  } catch (error) {
-    console.error('Failed to check if extension is ignored:', error)
-    return false
-  }
+  const ignoredExtensions = await loadIgnoredExtensions()
+  return ignoredExtensions.includes(extensionId)
 }
 
 /**
  * Clear all ignored extensions
  */
-export async function clearIgnoredExtensions(): Promise<boolean> {
-  return await saveIgnoredExtensions([])
+export async function clearIgnoredExtensions(): Promise<void> {
+  await saveIgnoredExtensions([])
+}
+
+/**
+ * Toggle an extension's ignored status
+ */
+export async function toggleIgnoredExtension(extensionId: string): Promise<boolean> {
+  const ignoredExtensions = await loadIgnoredExtensions()
+  const isCurrentlyIgnored = ignoredExtensions.includes(extensionId)
+
+  if (isCurrentlyIgnored) {
+    const updatedList = ignoredExtensions.filter(id => id !== extensionId)
+    await saveIgnoredExtensions(updatedList)
+    return false // Now not ignored
+  } else {
+    ignoredExtensions.push(extensionId)
+    await saveIgnoredExtensions(ignoredExtensions)
+    return true // Now ignored
+  }
 }

@@ -17,3 +17,9 @@ export interface InstalledExtension {
 export type GetPrimaryExtensions = () => Promise<Result<InstalledExtension[]>>
 
 export type GetInstalledExtensions = () => Promise<Result<{ [buildName: string]: InstalledExtension[] }>>
+
+export type GetIgnoredExtensions = () => Promise<Result<string[]>>
+
+export type ToggleIgnoredExtension = (extensionId: string) => Promise<Result<boolean>>
+
+export type ClearIgnoredExtensions = () => Promise<Result<void>>

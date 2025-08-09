@@ -11,7 +11,11 @@ export enum IPCChannel {
   REMOVE_EXTENSION_FROM_PACK = 'remove-extension-from-pack',
   BUILD_EXTENSION_PACK = 'build-extension-pack',
   CREATE_EXTENSION_PACK = 'create-extension-pack',
-  UPDATE_EXTENSION_PACK = 'update-extension-pack'
+  UPDATE_EXTENSION_PACK = 'update-extension-pack',
+
+  GET_IGNORED_EXTENSIONS = 'get-ignored-extensions',
+  TOGGLE_IGNORED_EXTENSION = 'toggle-ignored-extension',
+  CLEAR_IGNORED_EXTENSIONS = 'clear-ignored-extensions'
 }
 
 const on = <T extends (...args: any) => any>(

@@ -1,4 +1,4 @@
-import type { GetPrimaryExtensions, GetInstalledExtensions } from './extension'
+import type { GetPrimaryExtensions, GetInstalledExtensions, GetIgnoredExtensions, ToggleIgnoredExtension, ClearIgnoredExtensions } from './extension'
 import type {
   CreateExtensionPack,
   GetExtensionPacks,
@@ -17,4 +17,7 @@ export interface ExtensionAPI {
   addExtensionToPack: AddExtensionToPack
   removeExtensionFromPack: RemoveExtensionFromPack
   buildExtensionPack: BuildExtensionPack
+  getIgnoredExtensions: GetIgnoredExtensions
+  toggleIgnoredExtension: ToggleIgnoredExtension
+  clearIgnoredExtensions: ClearIgnoredExtensions
 }

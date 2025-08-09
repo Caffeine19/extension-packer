@@ -22,10 +22,11 @@ const api: ExtensionAPI = {
     ipcRenderer.invoke(IPCChannel.ADD_EXTENSION_TO_PACK, packName, extensionId),
   removeExtensionFromPack: (packName, extensionId) =>
     ipcRenderer.invoke(IPCChannel.REMOVE_EXTENSION_FROM_PACK, packName, extensionId),
-  buildExtensionPack: (packName) => ipcRenderer.invoke(IPCChannel.BUILD_EXTENSION_PACK, packName)
-}
-
-// Use `contextBridge` APIs to expose Electron APIs to
+  buildExtensionPack: (packName) => ipcRenderer.invoke(IPCChannel.BUILD_EXTENSION_PACK, packName),
+  getIgnoredExtensions: () => ipcRenderer.invoke(IPCChannel.GET_IGNORED_EXTENSIONS),
+  toggleIgnoredExtension: (extensionId) => ipcRenderer.invoke(IPCChannel.TOGGLE_IGNORED_EXTENSION, extensionId),
+  clearIgnoredExtensions: () => ipcRenderer.invoke(IPCChannel.CLEAR_IGNORED_EXTENSIONS)
+}// Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise
 // just add to the DOM global.
 if (process.contextIsolated) {
