@@ -3,6 +3,39 @@ import * as path from 'path'
 import * as os from 'os'
 import type { InstalledExtension } from '@shared/extension'
 
+// Helper function to convert icon file to base64 data URL
+async function getIconDataUrl(iconPath: string): Promise<string | undefined> {
+  try {
+    const iconData = await fs.readFile(iconPath)
+    const ext = path.extname(iconPath).toLowerCase()
+    let mimeType = 'image/png' // default
+
+    switch (ext) {
+      case '.png':
+        mimeType = 'image/png'
+        break
+      case '.jpg':
+      case '.jpeg':
+        mimeType = 'image/jpeg'
+        break
+      case '.svg':
+        mimeType = 'image/svg+xml'
+        break
+      case '.gif':
+        mimeType = 'image/gif'
+        break
+      case '.webp':
+        mimeType = 'image/webp'
+        break
+    }
+
+    return `data:${mimeType};base64,${iconData.toString('base64')}`
+  } catch (error) {
+    console.warn(`Failed to read icon file: ${iconPath}`, error)
+    return undefined
+  }
+}
+
 // copy from raycast/vscode extension, no need to modify this file
 // @link https://github.com/raycast/extensions/blob/48e820c8fe382b16cf90f3ddea95e7e7e7819c3e/extensions/visual-studio-code-recent-projects/src/lib/vscode.ts
 
@@ -108,7 +141,8 @@ async function getPackageJSONInfo(packagePath: string): Promise<PackageJSONInfo 
     }
 
     const preview = packageJSON.preview as boolean | undefined
-    const icon = iconFilename ? path.join(folder, iconFilename) : undefined
+    const iconPath = iconFilename ? path.join(folder, iconFilename) : undefined
+    const icon = iconPath ? await getIconDataUrl(iconPath) : undefined
 
     return {
       displayName,

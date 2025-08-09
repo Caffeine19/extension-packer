@@ -79,7 +79,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
         <div class="flex-shrink-0">
           {props.extension.icon ? (
             <img
-              src={`file://${props.extension.icon}`}
+              src={props.extension.icon}
               alt={props.extension.name}
               class="w-12 h-12 rounded"
               onError={(e) => {
