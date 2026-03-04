@@ -1,6 +1,8 @@
 import * as fs from 'fs/promises'
 import * as path from 'path'
-import { app } from 'electron'
+import * as os from 'os'
+import { app, dialog } from 'electron'
+import { CUSTOM_EXTENSION_CATEGORY } from '@shared/pack'
 import type { ExtensionPack } from '@shared/pack'
 import { promisifyExec } from './utils/promisifyExec'
 
@@ -65,7 +67,8 @@ export async function getExtensionPacks() {
       extensionPack: packageJson.extensionPack,
       categories: packageJson.categories || [],
       engines: packageJson.engines,
-      folderPath: packPath
+      folderPath: packPath,
+      icon: packageJson.icon ? `pack-icon://${path.join(packPath, packageJson.icon)}` : undefined
     }
   })
 
@@ -126,7 +129,7 @@ export async function createExtensionPack(
     engines: {
       vscode: '^1.102.0'
     },
-    categories: ['Extension Packs'],
+    categories: [CUSTOM_EXTENSION_CATEGORY],
     extensionPack: extensions
   }
 
@@ -266,4 +269,195 @@ export async function buildExtensionPack(
 
   const outputPath = path.join(pack.folderPath, vsixFile)
   return { outputPath }
+}
+
+/**
+ * Upload an icon image for an extension pack.
+ * Opens a file dialog, copies the selected image to the pack folder, and updates package.json.
+ */
+export async function uploadPackIcon(
+  packName: ExtensionPack['name']
+): Promise<{ iconPath: string }> {
+  const pack = await getExtensionPack(packName)
+  if (!pack) {
+    throw new Error(`Extension pack ${packName} not found`)
+  }
+
+  const result = await dialog.showOpenDialog({
+    title: 'Select Pack Icon',
+    filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'svg', 'webp'] }],
+    properties: ['openFile']
+  })
+
+  if (result.canceled || result.filePaths.length === 0) {
+    throw new Error('No file selected')
+  }
+
+  const sourcePath = result.filePaths[0]
+  const ext = path.extname(sourcePath)
+  const iconFileName = `icon${ext}`
+  const destPath = path.join(pack.folderPath, iconFileName)
+
+  // Copy the image file to the pack folder
+  await fs.copyFile(sourcePath, destPath)
+
+  // Update package.json with the icon field
+  const packageJsonPath = path.join(pack.folderPath, 'package.json')
+  const packageContent = await fs.readFile(packageJsonPath, 'utf-8')
+  const packageJson = JSON.parse(packageContent)
+  packageJson.icon = iconFileName
+  await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2))
+
+  return { iconPath: `pack-icon://${destPath}` }
+}
+
+/**
+ * Remove the icon from an extension pack.
+ * Deletes the icon file from disk and removes the icon field from package.json.
+ */
+export async function removePackIcon(packName: ExtensionPack['name']): Promise<void> {
+  const pack = await getExtensionPack(packName)
+  if (!pack) {
+    throw new Error(`Extension pack ${packName} not found`)
+  }
+
+  const packageJsonPath = path.join(pack.folderPath, 'package.json')
+  const packageContent = await fs.readFile(packageJsonPath, 'utf-8')
+  const packageJson = JSON.parse(packageContent)
+
+  if (packageJson.icon) {
+    const iconPath = path.join(pack.folderPath, packageJson.icon)
+    try {
+      await fs.unlink(iconPath)
+    } catch {
+      // Icon file may already be missing, that's fine
+    }
+    delete packageJson.icon
+    await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2))
+  }
+}
+
+/**
+ * Delete an extension pack by removing its entire folder.
+ */
+export async function deleteExtensionPack(packName: ExtensionPack['name']): Promise<void> {
+  const pack = await getExtensionPack(packName)
+  if (!pack) {
+    throw new Error(`Extension pack ${packName} not found`)
+  }
+
+  await fs.rm(pack.folderPath, { recursive: true, force: true })
+}
+
+/**
+ * Get the VS Code extensions directory path.
+ */
+function getVSCodeExtensionsDir(): string {
+  return path.join(os.homedir(), '.vscode', 'extensions')
+}
+
+/**
+ * Install an extension pack into VS Code.
+ * Builds a .vsix file and installs it via the `code` CLI.
+ */
+export async function installExtensionPack(packName: ExtensionPack['name']): Promise<void> {
+  const pack = await getExtensionPack(packName)
+  if (!pack) {
+    throw new Error(`Extension pack ${packName} not found`)
+  }
+
+  // Build the vsix first
+  const { outputPath } = await buildExtensionPack(packName)
+
+  // Install via code CLI
+  const installCommand = `code --install-extension "${outputPath}" --force`
+  console.log(`Installing extension pack: ${installCommand}`)
+
+  const { stderr } = await promisifyExec(installCommand)
+  if (
+    stderr &&
+    !stderr.includes('Installing extensions') &&
+    !stderr.includes('was successfully installed')
+  ) {
+    // code CLI prints progress to stderr, only throw on real errors
+    if (stderr.includes('error') || stderr.includes('Error')) {
+      throw new Error(`Install failed: ${stderr}`)
+    }
+  }
+
+  // Clean up the vsix file after install
+  try {
+    await fs.unlink(outputPath)
+  } catch {
+    // Ignore cleanup errors
+  }
+}
+
+/**
+ * Uninstall an extension pack from VS Code.
+ * Per https://github.com/microsoft/vscode/issues/169109:
+ * 1. Delete the extension folder from ~/.vscode/extensions/
+ * 2. Remove the entry from ~/.vscode/extensions/extensions.json
+ */
+export async function uninstallExtensionPack(packName: ExtensionPack['name']): Promise<void> {
+  const pack = await getExtensionPack(packName)
+  if (!pack) {
+    throw new Error(`Extension pack ${packName} not found`)
+  }
+
+  const extensionsDir = getVSCodeExtensionsDir()
+  const extensionsJsonPath = path.join(extensionsDir, 'extensions.json')
+
+  // Read extensions.json to find the installed pack
+  let extensionsJson: Array<{
+    identifier: { id: string }
+    location?: { fsPath?: string; path?: string } | string
+    [key: string]: unknown
+  }> = []
+
+  try {
+    const data = await fs.readFile(extensionsJsonPath, 'utf-8')
+    extensionsJson = JSON.parse(data)
+  } catch {
+    throw new Error('Could not read VS Code extensions.json')
+  }
+
+  // Find the entry matching this pack by identifier id
+  // Extension packs typically have identifier like "undefined_publisher.<packName>"
+  // or the publisher.packName format
+  const entryIndex = extensionsJson.findIndex((entry) => {
+    const id = entry.identifier?.id?.toLowerCase() || ''
+    return id === packName.toLowerCase() || id.endsWith(`.${packName.toLowerCase()}`)
+  })
+
+  if (entryIndex === -1) {
+    throw new Error(`Extension pack "${packName}" is not installed in VS Code`)
+  }
+
+  const entry = extensionsJson[entryIndex]
+
+  // Determine the installed folder path
+  let installedFolderPath: string | undefined
+  if (typeof entry.location === 'string') {
+    installedFolderPath = path.join(extensionsDir, entry.location)
+  } else if (entry.location?.fsPath) {
+    installedFolderPath = entry.location.fsPath
+  } else if (entry.location?.path) {
+    installedFolderPath = entry.location.path
+  }
+
+  // 1. Delete the extension folder
+  if (installedFolderPath) {
+    try {
+      await fs.rm(installedFolderPath, { recursive: true, force: true })
+      console.log(`Deleted extension folder: ${installedFolderPath}`)
+    } catch (error) {
+      console.warn(`Could not delete extension folder: ${installedFolderPath}`, error)
+    }
+  }
+
+  // 2. Remove the entry from extensions.json
+  extensionsJson.splice(entryIndex, 1)
+  await fs.writeFile(extensionsJsonPath, JSON.stringify(extensionsJson, null, '\t'))
+  console.log(`Removed entry from extensions.json for: ${packName}`)
 }

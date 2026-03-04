@@ -1,0 +1,16 @@
+{
+  "name": "custom-extension-pack-rust",
+  "displayName": "Custom Extension Pack(Rust)",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "categories": [
+    "Custom Extension"
+  ],
+  "extensionPack": [
+    "rust-lang.rust-analyzer"
+  ],
+  "icon": "icon.png"
+}

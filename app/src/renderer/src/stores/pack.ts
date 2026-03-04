@@ -65,6 +65,101 @@ const handleAddExtensionToPack = async (packName: string, extensionId: string): 
   }
 }
 
+const handleCreateExtensionPack = async (
+  packName: string,
+  displayName: string,
+  description: string,
+  extensions: string[]
+): Promise<boolean> => {
+  try {
+    const result = await window.api.createExtensionPack(
+      packName,
+      displayName,
+      description,
+      extensions
+    )
+    if (result.success) {
+      await handleGetExtensionPacks()
+      return true
+    } else {
+      console.error('Failed to create extension pack:', result.msg)
+      return false
+    }
+  } catch (error) {
+    console.error('Failed to create extension pack:', error)
+    return false
+  }
+}
+
+const handleUpdateExtensionPack = async (
+  packName: string,
+  updates: { displayName?: string; description?: string }
+): Promise<boolean> => {
+  try {
+    const result = await window.api.updateExtensionPack(packName, updates)
+    if (result.success) {
+      await handleGetExtensionPacks()
+      return true
+    } else {
+      console.error('Failed to update extension pack:', result.msg)
+      return false
+    }
+  } catch (error) {
+    console.error('Failed to update extension pack:', error)
+    return false
+  }
+}
+
+const handleDeleteExtensionPack = async (packName: string): Promise<boolean> => {
+  try {
+    const result = await window.api.deleteExtensionPack(packName)
+    if (result.success) {
+      await handleGetExtensionPacks()
+      return true
+    } else {
+      console.error('Failed to delete extension pack:', result.msg)
+      return false
+    }
+  } catch (error) {
+    console.error('Failed to delete extension pack:', error)
+    return false
+  }
+}
+
+const handleInstallExtensionPack = async (
+  packName: string
+): Promise<{ success: boolean; msg?: string }> => {
+  try {
+    const result = await window.api.installExtensionPack(packName)
+    if (result.success) {
+      return { success: true }
+    } else {
+      console.error('Failed to install extension pack:', result.msg)
+      return { success: false, msg: result.msg }
+    }
+  } catch (error) {
+    console.error('Failed to install extension pack:', error)
+    return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
+  }
+}
+
+const handleUninstallExtensionPack = async (
+  packName: string
+): Promise<{ success: boolean; msg?: string }> => {
+  try {
+    const result = await window.api.uninstallExtensionPack(packName)
+    if (result.success) {
+      return { success: true }
+    } else {
+      console.error('Failed to uninstall extension pack:', result.msg)
+      return { success: false, msg: result.msg }
+    }
+  } catch (error) {
+    console.error('Failed to uninstall extension pack:', error)
+    return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
+  }
+}
+
 const clearPackSearch = () => {
   setPackSearchQuery('')
 }
@@ -90,6 +185,11 @@ export const usePackStore = () => ({
   // Handlers
   handleGetExtensionPacks,
   handleAddExtensionToPack,
+  handleCreateExtensionPack,
+  handleUpdateExtensionPack,
+  handleDeleteExtensionPack,
+  handleInstallExtensionPack,
+  handleUninstallExtensionPack,
   clearPackSearch,
   handlePackSearchInput
 })

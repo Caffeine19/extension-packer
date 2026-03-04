@@ -1,0 +1,16 @@
+{
+  "name": "custom-extension-pack-go",
+  "displayName": "Custom Extension Pack(Go)",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "categories": [
+    "Custom Extension"
+  ],
+  "extensionPack": [
+    "golang.go"
+  ],
+  "icon": "icon.png"
+}

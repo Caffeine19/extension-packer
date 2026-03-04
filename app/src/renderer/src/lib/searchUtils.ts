@@ -1,6 +1,7 @@
 /**
  * Utility functions for enhanced search functionality
  */
+import { debounce } from 'radash'
 
 /**
  * Simple fuzzy search implementation
@@ -61,31 +62,11 @@ export function searchMultipleFields(
 }
 
 /**
- * Debounce function to limit the rate of function calls
- */
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null
-
-  return (...args: Parameters<T>) => {
-    if (timeout) {
-      clearTimeout(timeout)
-    }
-
-    timeout = setTimeout(() => {
-      func(...args)
-    }, wait)
-  }
-}
-
-/**
  * Create a debounced signal setter for search functionality
  */
 export function createDebouncedSetter<T>(
   setter: (value: T) => void,
   delay: number = 300
 ): (value: T) => void {
-  return debounce(setter, delay)
+  return debounce({ delay }, setter)
 }

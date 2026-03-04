@@ -13,11 +13,18 @@ export enum IPCChannel {
   CREATE_EXTENSION_PACK = 'create-extension-pack',
   UPDATE_EXTENSION_PACK = 'update-extension-pack',
 
+  UPLOAD_PACK_ICON = 'upload-pack-icon',
+  REMOVE_PACK_ICON = 'remove-pack-icon',
+  DELETE_EXTENSION_PACK = 'delete-extension-pack',
+  INSTALL_EXTENSION_PACK = 'install-extension-pack',
+  UNINSTALL_EXTENSION_PACK = 'uninstall-extension-pack',
+
   GET_IGNORED_EXTENSIONS = 'get-ignored-extensions',
   TOGGLE_IGNORED_EXTENSION = 'toggle-ignored-extension',
   CLEAR_IGNORED_EXTENSIONS = 'clear-ignored-extensions'
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const on = <T extends (...args: any) => any>(
   ipcMain: IpcMain,
   channel: IPCChannel,
@@ -26,6 +33,7 @@ const on = <T extends (...args: any) => any>(
   return ipcMain.on(channel, handler)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const handle = <T extends (...args: any) => any>(
   ipcMain: IpcMain,
   channel: IPCChannel,

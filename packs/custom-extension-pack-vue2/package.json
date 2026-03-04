@@ -1,0 +1,17 @@
+{
+  "name": "custom-extension-pack-vue2",
+  "displayName": "Custom Extension Pack(Vue2)",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "categories": [
+    "Custom Extension"
+  ],
+  "extensionPack": [
+    "nicholashsiang.vscode-vue2-snippets",
+    "octref.vetur"
+  ],
+  "icon": "icon.png"
+}

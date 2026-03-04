@@ -7,7 +7,11 @@
     "vscode": "^1.102.0"
   },
   "categories": [
-    "Extension Packs"
+    "Custom Extension"
   ],
-  "extensionPack": []
+  "extensionPack": [
+    "hollowtree.vue-snippets",
+    "vue.volar"
+  ],
+  "icon": "icon.png"
 }

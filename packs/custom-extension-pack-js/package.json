@@ -7,12 +7,35 @@
     "vscode": "^1.102.0"
   },
   "categories": [
-    "Extension Packs"
+    "Custom Extension"
   ],
   "extensionPack": [
     "publisher.extensionName",
     "britesnow.vscode-toggle-quotes",
     "formulahendry.auto-rename-tag",
-    "christian-kohler.path-intellisense"
-  ]
+    "christian-kohler.path-intellisense",
+    "dbaeumer.vscode-eslint",
+    "chakrounanas.turbo-console-log",
+    "antfu.iconify",
+    "oxc.oxc-vscode",
+    "vitest.explorer",
+    "ms-playwright.playwright",
+    "wix.vscode-import-cost",
+    "donjayamanne.jquerysnippets",
+    "sburg.vscode-javascript-booster",
+    "solidjs-community.solid-snippets",
+    "pranaygp.vscode-css-peek",
+    "stxr.iconfont-preview",
+    "tobermory.es6-string-html",
+    "tonka3000.raycast",
+    "yoavbls.pretty-ts-errors",
+    "wallabyjs.console-ninja",
+    "wallabyjs.quokka-vscode",
+    "idered.npm",
+    "meganrogge.template-string-converter",
+    "prisma.prisma",
+    "typescriptteam.native-preview",
+    "ms-vscode.vscode-typescript-next"
+  ],
+  "icon": "icon.png"
 }

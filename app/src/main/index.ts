@@ -1,5 +1,6 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, protocol, net } from 'electron'
 import { join } from 'path'
+import { pathToFileURL } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { getPrimaryInstalledExtensions, getInstalledExtensions } from './vscodeExtensions'
@@ -9,7 +10,12 @@ import {
   updateExtensionPack,
   addExtensionToPack,
   removeExtensionFromPack,
-  buildExtensionPack
+  buildExtensionPack,
+  uploadPackIcon,
+  removePackIcon,
+  deleteExtensionPack,
+  installExtensionPack,
+  uninstallExtensionPack
 } from './extensionPacks'
 import { getIgnoredExtensions, toggleIgnoredExtension } from './ignoredExtensions'
 import {
@@ -18,7 +24,12 @@ import {
   CreateExtensionPack,
   GetExtensionPacks,
   RemoveExtensionFromPack,
-  UpdateExtensionPack
+  UpdateExtensionPack,
+  UploadPackIcon,
+  RemovePackIcon,
+  DeleteExtensionPack,
+  InstallExtensionPack,
+  UninstallExtensionPack
 } from '@shared/pack'
 import type {
   GetPrimaryExtensions,
@@ -27,6 +38,11 @@ import type {
   ToggleIgnoredExtension
 } from '@shared/extension'
 import { defineIPC, IPCChannel } from './utils/defineIPC'
+
+// Register custom protocol for pack icons
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'pack-icon', privileges: { bypassCSP: true, supportFetchAPI: true } }
+])
 
 function createWindow(): void {
   const vibrancyOptions: Electron.BrowserWindowConstructorOptions = {
@@ -55,6 +71,7 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     },
+    trafficLightPosition: { x: 24, y: 10 },
 
     ...customTitleBarOptions,
     ...vibrancyOptions
@@ -82,6 +99,12 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  // Register protocol handler for pack icons
+  protocol.handle('pack-icon', (request) => {
+    const filePath = decodeURIComponent(request.url.replace('pack-icon://', ''))
+    return net.fetch(pathToFileURL(filePath).href)
+  })
+
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
@@ -197,6 +220,87 @@ app.whenReady().then(() => {
         return { success: true, data: { outputPath: result.outputPath } }
       } catch (error) {
         console.error('Failed to build extension pack:', error)
+        return {
+          success: false,
+          msg: error instanceof Error ? error.message : 'Unknown error'
+        }
+      }
+    }
+  )
+
+  defineIPC.handle<UploadPackIcon>(ipcMain, IPCChannel.UPLOAD_PACK_ICON, async (_, packName) => {
+    try {
+      const result = await uploadPackIcon(packName)
+      return { success: true, data: { iconPath: result.iconPath } }
+    } catch (error) {
+      // User cancelled is not a real error
+      if (error instanceof Error && error.message === 'No file selected') {
+        return { success: false, msg: 'No file selected' }
+      }
+      console.error('Failed to upload pack icon:', error)
+      return {
+        success: false,
+        msg: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  })
+
+  defineIPC.handle<RemovePackIcon>(ipcMain, IPCChannel.REMOVE_PACK_ICON, async (_, packName) => {
+    try {
+      await removePackIcon(packName)
+      return { success: true, data: true }
+    } catch (error) {
+      console.error('Failed to remove pack icon:', error)
+      return {
+        success: false,
+        msg: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  })
+
+  defineIPC.handle<DeleteExtensionPack>(
+    ipcMain,
+    IPCChannel.DELETE_EXTENSION_PACK,
+    async (_, packName) => {
+      try {
+        await deleteExtensionPack(packName)
+        return { success: true, data: true }
+      } catch (error) {
+        console.error('Failed to delete extension pack:', error)
+        return {
+          success: false,
+          msg: error instanceof Error ? error.message : 'Unknown error'
+        }
+      }
+    }
+  )
+
+  defineIPC.handle<InstallExtensionPack>(
+    ipcMain,
+    IPCChannel.INSTALL_EXTENSION_PACK,
+    async (_, packName) => {
+      try {
+        await installExtensionPack(packName)
+        return { success: true, data: true }
+      } catch (error) {
+        console.error('Failed to install extension pack:', error)
+        return {
+          success: false,
+          msg: error instanceof Error ? error.message : 'Unknown error'
+        }
+      }
+    }
+  )
+
+  defineIPC.handle<UninstallExtensionPack>(
+    ipcMain,
+    IPCChannel.UNINSTALL_EXTENSION_PACK,
+    async (_, packName) => {
+      try {
+        await uninstallExtensionPack(packName)
+        return { success: true, data: true }
+      } catch (error) {
+        console.error('Failed to uninstall extension pack:', error)
         return {
           success: false,
           msg: error instanceof Error ? error.message : 'Unknown error'

@@ -12,11 +12,14 @@ export interface InstalledExtension {
   publisherDisplayName?: string
   preview?: boolean
   installedTimestamp?: number
+  categories?: string[]
 }
 
 export type GetPrimaryExtensions = () => Promise<Result<InstalledExtension[]>>
 
-export type GetInstalledExtensions = () => Promise<Result<{ [buildName: string]: InstalledExtension[] }>>
+export type GetInstalledExtensions = () => Promise<
+  Result<{ [buildName: string]: InstalledExtension[] }>
+>
 
 export type GetIgnoredExtensions = () => Promise<Result<string[]>>
 

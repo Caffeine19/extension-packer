@@ -1,0 +1,16 @@
+{
+  "name": "custom-extension-pack-vim",
+  "displayName": "Custom Extension Pack(Vim)",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "categories": [
+    "Custom Extension"
+  ],
+  "extensionPack": [
+    "xadillax.viml"
+  ],
+  "icon": "icon.png"
+}

@@ -75,6 +75,7 @@ interface PackageJSONInfo {
   displayName?: string
   icon?: string
   preview?: boolean
+  categories?: string[]
 }
 
 // VS Code variants and their folder schemes
@@ -141,13 +142,15 @@ async function getPackageJSONInfo(packagePath: string): Promise<PackageJSONInfo 
     }
 
     const preview = packageJSON.preview as boolean | undefined
+    const categories = packageJSON.categories as string[] | undefined
     const iconPath = iconFilename ? path.join(folder, iconFilename) : undefined
     const icon = iconPath ? await getIconDataUrl(iconPath) : undefined
 
     return {
       displayName,
       icon,
-      preview
+      preview,
+      categories
     }
   } catch {
     return undefined
@@ -195,7 +198,8 @@ async function getExtensionsForScheme(scheme: string): Promise<InstalledExtensio
         publisherId: ext.metadata?.publisherId,
         publisherDisplayName: ext.metadata?.publisherDisplayName,
         preview: pkgInfo?.preview,
-        installedTimestamp: ext.metadata?.installedTimestamp
+        installedTimestamp: ext.metadata?.installedTimestamp,
+        categories: pkgInfo?.categories
       })
     }
 

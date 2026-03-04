@@ -31,7 +31,9 @@ export async function loadIgnoredExtensions(): Promise<string[]> {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return []
     }
-    throw new Error(`Failed to load ignored extensions: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    throw new Error(
+      `Failed to load ignored extensions: ${error instanceof Error ? error.message : 'Unknown error'}`
+    )
   }
 }
 
@@ -47,7 +49,9 @@ export async function saveIgnoredExtensions(ignoredExtensions: string[]): Promis
     }
     await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8')
   } catch (error) {
-    throw new Error(`Failed to save ignored extensions: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    throw new Error(
+      `Failed to save ignored extensions: ${error instanceof Error ? error.message : 'Unknown error'}`
+    )
   }
 }
 
@@ -78,7 +82,7 @@ export async function addToIgnoredList(extensionId: string): Promise<void> {
  */
 export async function removeFromIgnoredList(extensionId: string): Promise<void> {
   const ignoredExtensions = await loadIgnoredExtensions()
-  const updatedList = ignoredExtensions.filter(id => id !== extensionId)
+  const updatedList = ignoredExtensions.filter((id) => id !== extensionId)
 
   // Only save if something was actually removed
   if (updatedList.length !== ignoredExtensions.length) {
@@ -109,7 +113,7 @@ export async function toggleIgnoredExtension(extensionId: string): Promise<boole
   const isCurrentlyIgnored = ignoredExtensions.includes(extensionId)
 
   if (isCurrentlyIgnored) {
-    const updatedList = ignoredExtensions.filter(id => id !== extensionId)
+    const updatedList = ignoredExtensions.filter((id) => id !== extensionId)
     await saveIgnoredExtensions(updatedList)
     return false // Now not ignored
   } else {

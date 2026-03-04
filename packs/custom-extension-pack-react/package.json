@@ -1,0 +1,18 @@
+{
+  "name": "custom-extension-pack-react",
+  "displayName": "Custom Extension Pack(React)",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "categories": [
+    "Custom Extension"
+  ],
+  "extensionPack": [
+    "dsznajder.es7-react-js-snippets",
+    "rodrigovallades.es7-react-js-snippets",
+    "nativebase.nativebase-v3-vscode-extension"
+  ],
+  "icon": "icon.png"
+}

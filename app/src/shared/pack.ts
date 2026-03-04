@@ -1,6 +1,9 @@
 import { InstalledExtension } from './extension'
 import type { Result } from './result'
 
+/** Category used to identify custom-built extension packs */
+export const CUSTOM_EXTENSION_CATEGORY = 'Custom Extension'
+
 export interface ExtensionPack {
   name: string
   displayName: string
@@ -12,6 +15,7 @@ export interface ExtensionPack {
     vscode: string
   }
   folderPath: string
+  icon?: string
 }
 
 export type CreateExtensionPack = (
@@ -41,3 +45,15 @@ export type RemoveExtensionFromPack = (
 export type BuildExtensionPack = (
   packName: ExtensionPack['name']
 ) => Promise<Result<{ outputPath: string }>>
+
+export type UploadPackIcon = (
+  packName: ExtensionPack['name']
+) => Promise<Result<{ iconPath: string }>>
+
+export type RemovePackIcon = (packName: ExtensionPack['name']) => Promise<Result<boolean>>
+
+export type DeleteExtensionPack = (packName: ExtensionPack['name']) => Promise<Result<boolean>>
+
+export type InstallExtensionPack = (packName: ExtensionPack['name']) => Promise<Result<boolean>>
+
+export type UninstallExtensionPack = (packName: ExtensionPack['name']) => Promise<Result<boolean>>

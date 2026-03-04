@@ -6,5 +6,11 @@ export default tseslint.config(
   { ignores: ['**/node_modules', '**/dist', '**/out'] },
   tseslint.configs.recommended,
   eslintPluginSolid.configs['flat/typescript'],
-  eslintConfigPrettier
+  eslintConfigPrettier,
+
+  {
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off'
+    }
+  }
 )

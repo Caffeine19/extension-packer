@@ -1,0 +1,17 @@
+{
+  "name": "custom-extension-pack-lua",
+  "displayName": "Custom Extension Pack(Lua)",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "categories": [
+    "Custom Extension"
+  ],
+  "extensionPack": [
+    "johnnymorganz.stylua",
+    "sumneko.lua"
+  ],
+  "icon": "icon.png"
+}

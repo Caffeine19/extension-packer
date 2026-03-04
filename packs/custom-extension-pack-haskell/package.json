@@ -1,0 +1,20 @@
+{
+  "name": "custom-extension-pack-haskell",
+  "displayName": "Custom Extension Pack(Haskell)",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "categories": [
+    "Custom Extension"
+  ],
+  "extensionPack": [
+    "haskell.haskell",
+    "mogeko.haskell-extension-pack",
+    "meowcolm024.runner2",
+    "hoovercj.haskell-linter",
+    "justusadam.language-haskell"
+  ],
+  "icon": "icon.png"
+}

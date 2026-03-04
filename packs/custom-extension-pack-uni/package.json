@@ -1,0 +1,21 @@
+{
+  "name": "custom-extension-pack-uni",
+  "displayName": "Custom Extension Pack(Uni)",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "categories": [
+    "Custom Extension"
+  ],
+  "extensionPack": [
+    "uni-helper.uni-highlight-vscode",
+    "uni-helper.uni-app-schemas-vscode",
+    "uni-helper.uni-helper-vscode",
+    "uni-helper.uni-ui-snippets-vscode",
+    "uni-helper.uni-cloud-snippets-vscode",
+    "uni-helper.uni-app-snippets-vscode"
+  ],
+  "icon": "icon.png"
+}

@@ -14,6 +14,7 @@ export interface ExtensionData {
   preview?: boolean
   installedTimestamp?: number
   isIgnored?: boolean
+  categories?: string[]
 }
 
 export interface ExtensionPack {
@@ -27,6 +28,7 @@ export interface ExtensionPack {
     vscode: string
   }
   folderPath: string
+  icon?: string
 }
 
 interface ExtensionCardProps {
@@ -38,6 +40,14 @@ interface ExtensionCardProps {
 
 const ExtensionCard: Component<ExtensionCardProps> = (props) => {
   const [showPackMenu, setShowPackMenu] = createSignal(false)
+
+  /**
+   * Extract keyword from display name, e.g. "Custom Extension Pack(Java)" → "Java"
+   */
+  const extractPackKeyword = (displayName: string): string => {
+    const match = displayName.match(/\((.+)\)\s*$/)
+    return match ? match[1] : displayName
+  }
 
   const formatDate = (timestamp?: number): string => {
     if (!timestamp) return 'Unknown'
@@ -72,8 +82,8 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
 
   return (
     <div
-      class={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${
-        props.extension.isIgnored ? 'opacity-60 bg-gray-50' : ''
+      class={`bg-zinc-900 rounded-lg border border-zinc-800 p-4 hover:shadow-md hover:shadow-black/20 transition-shadow ${
+        props.extension.isIgnored ? 'opacity-60 bg-gray-850' : ''
       }`}
     >
       <div class="flex items-start gap-3">
@@ -83,7 +93,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
             <img
               src={props.extension.icon}
               alt={props.extension.name}
-              class="w-12 h-12 rounded object-center  object-fill"
+              class="w-12 h-12 rounded object-center object-contain"
               onError={(e) => {
                 // Fallback to a default icon if image fails to load
                 e.currentTarget.style.display = 'none'
@@ -93,7 +103,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
             />
           ) : null}
           <div
-            class="w-12 h-12 bg-blue-100 rounded flex items-center justify-center text-blue-600 font-semibold"
+            class="w-12 h-12 bg-blue-900 rounded flex items-center justify-center text-blue-300 font-semibold"
             style={{ display: props.extension.icon ? 'none' : 'flex' }}
           >
             {props.extension.name.charAt(0).toUpperCase()}
@@ -103,51 +113,51 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
         {/* Extension Details */}
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 mb-1">
-            <h3 class="text-lg font-semibold text-gray-900 truncate">{props.extension.name}</h3>
+            <h3 class="text-lg font-semibold text-zinc-100 truncate">{props.extension.name}</h3>
             {props.extension.isIgnored && (
-              <span class="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+              <span class="px-2 py-1 text-xs bg-yellow-900 text-yellow-300 rounded-full">
                 Ignored
               </span>
             )}
             {props.extension.preRelease && (
-              <span class="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">
+              <span class="px-2 py-1 text-xs bg-orange-900 text-orange-300 rounded-full">
                 Pre-release
               </span>
             )}
             {props.extension.preview && (
-              <span class="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+              <span class="px-2 py-1 text-xs bg-yellow-900 text-yellow-300 rounded-full">
                 Preview
               </span>
             )}
             {props.extension.updated && (
-              <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+              <span class="px-2 py-1 text-xs bg-green-900 text-green-300 rounded-full">
                 Updated
               </span>
             )}
           </div>
 
-          <p class="text-sm text-gray-600 mb-2">by {getPublisherName()}</p>
+          <p class="text-sm text-zinc-400 mb-2">by {getPublisherName()}</p>
 
-          <div class="flex items-center gap-4 text-sm text-gray-500">
+          <div class="flex items-center gap-4 text-sm text-zinc-500">
             <span>v{props.extension.version}</span>
             <span>Installed: {formatDate(props.extension.installedTimestamp)}</span>
           </div>
 
           {/* Pack Tags */}
           <Show when={getPacksContainingExtension().length > 0}>
-            <div class="mt-2 flex flex-wrap gap-1">
-              <span class="text-xs text-gray-500 mr-1">In packs:</span>
+            <div class="mt-2 flex flex-wrap items-center gap-1">
+              <span class="text-xs text-zinc-500 mr-1">In packs:</span>
               <For each={getPacksContainingExtension()}>
                 {(pack) => (
-                  <span class="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                    {pack.displayName}
+                  <span class="inline-flex items-center px-2 py-1 text-xs bg-blue-900 text-blue-300 rounded-full">
+                    {extractPackKeyword(pack.displayName)}
                   </span>
                 )}
               </For>
             </div>
           </Show>
 
-          <p class="text-xs text-gray-400 mt-2 truncate" title={props.extension.id}>
+          <p class="text-xs text-zinc-500 mt-2 truncate" title={props.extension.id}>
             ID: {props.extension.id}
           </p>
         </div>
@@ -159,8 +169,8 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
             onClick={handleToggleIgnore}
             class={`px-3 py-2 text-sm rounded transition-colors flex items-center gap-2 ${
               props.extension.isIgnored
-                ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-yellow-600 text-white hover:bg-yellow-500'
+                : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
             }`}
             title={props.extension.isIgnored ? 'Remove from ignored list' : 'Add to ignored list'}
           >
@@ -193,7 +203,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
             <div class="relative">
               <button
                 onClick={() => setShowPackMenu(!showPackMenu())}
-                class="px-3 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors flex items-center gap-2 w-full justify-center"
+                class="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-500 transition-colors flex items-center gap-2 w-full justify-center"
                 title="Add to extension pack"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,9 +232,9 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
 
               {/* Pack Selection Dropdown */}
               <Show when={showPackMenu()}>
-                <div class="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <div class="absolute right-0 top-full mt-2 w-64 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg shadow-black/30 z-50">
                   <div class="py-2">
-                    <div class="px-3 py-2 text-sm font-medium text-gray-700 border-b">
+                    <div class="px-3 py-2 text-sm font-medium text-zinc-300 border-b border-zinc-700">
                       Select Extension Pack
                     </div>
                     <For each={props.availablePacks}>
@@ -232,10 +242,10 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
                         <button
                           onClick={() => handleAddToPack(pack.name)}
                           disabled={isExtensionInPack(pack)}
-                          class={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center justify-between ${
+                          class={`w-full px-3 py-2 text-left text-sm hover:bg-zinc-800 flex items-center justify-between ${
                             isExtensionInPack(pack)
-                              ? 'text-gray-400 cursor-not-allowed'
-                              : 'text-gray-700 hover:text-gray-900'
+                              ? 'text-zinc-700 cursor-not-allowed'
+                              : 'text-zinc-300 hover:text-zinc-100'
                           }`}
                           title={
                             isExtensionInPack(pack)
@@ -243,10 +253,28 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
                               : `Add to ${pack.displayName}`
                           }
                         >
-                          <div class="flex-1 min-w-0">
-                            <div class="truncate font-medium">{pack.displayName}</div>
-                            <div class="text-xs text-gray-500 truncate">
-                              {pack.extensionPack.length} extensions
+                          <div class="flex items-center gap-2 flex-1 min-w-0">
+                            <Show
+                              when={pack.icon}
+                              fallback={
+                                <div class="w-6 h-6 bg-zinc-800 rounded flex-shrink-0 flex items-center justify-center text-zinc-500 text-[9px] font-bold">
+                                  {pack.displayName.charAt(0).toUpperCase()}
+                                </div>
+                              }
+                            >
+                              <img
+                                src={pack.icon}
+                                alt=""
+                                class="w-6 h-6 rounded flex-shrink-0 object-cover"
+                              />
+                            </Show>
+                            <div class="min-w-0">
+                              <div class="truncate font-medium">
+                                {extractPackKeyword(pack.displayName)}{' '}
+                                <span class="text-xs text-zinc-400 font-normal">
+                                  ({pack.extensionPack.length})
+                                </span>
+                              </div>
                             </div>
                           </div>
                           <Show when={isExtensionInPack(pack)}>
@@ -273,7 +301,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
 
           {/* Ignored Extensions Message */}
           <Show when={props.extension.isIgnored}>
-            <div class="text-xs text-yellow-600 text-center italic">Ignored extension</div>
+            <div class="text-xs text-yellow-400 text-center italic">Ignored extension</div>
           </Show>
         </div>
       </div>
