@@ -7,6 +7,7 @@ import Packs from './pages/Packs'
 import Ignored from './pages/Ignored'
 import { useExtensionStore } from './stores/extension'
 import { usePackStore } from './stores/pack'
+import { Toaster } from './components/ui/Sonner'
 
 const Layout: Component<RouteSectionProps> = (props) => {
   const { extensions, ignoredExtensions, handleGetExtensions, handleGetIgnoredExtensions } =
@@ -43,12 +44,15 @@ const Layout: Component<RouteSectionProps> = (props) => {
 
 const App: Component = () => {
   return (
-    <Router root={Layout}>
-      <Route path="/" component={() => <Extensions />} />
-      <Route path="/extensions" component={() => <Extensions />} />
-      <Route path="/packs" component={() => <Packs />} />
-      <Route path="/ignored" component={() => <Ignored />} />
-    </Router>
+    <>
+      <Router root={Layout}>
+        <Route path="/" component={() => <Extensions />} />
+        <Route path="/extensions" component={() => <Extensions />} />
+        <Route path="/packs" component={() => <Packs />} />
+        <Route path="/ignored" component={() => <Ignored />} />
+      </Router>
+      <Toaster />
+    </>
   )
 }
 

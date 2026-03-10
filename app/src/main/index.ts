@@ -15,7 +15,8 @@ import {
   removePackIcon,
   deleteExtensionPack,
   installExtensionPack,
-  uninstallExtensionPack
+  uninstallExtensionPack,
+  initPacksDirectory
 } from './extensionPacks'
 import { getIgnoredExtensions, toggleIgnoredExtension } from './ignoredExtensions'
 import {
@@ -98,7 +99,9 @@ function createWindow(): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Copy bundled packs to writable userData on first launch (production only)
+  await initPacksDirectory()
   // Register protocol handler for pack icons
   protocol.handle('pack-icon', (request) => {
     const filePath = decodeURIComponent(request.url.replace('pack-icon://', ''))
@@ -106,7 +109,7 @@ app.whenReady().then(() => {
   })
 
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId('com.caffeinecat.extension-packer')
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.

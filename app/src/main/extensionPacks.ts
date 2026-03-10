@@ -15,8 +15,29 @@ function getPacksDirectory(): string {
     return path.join(process.cwd(), '..', 'packs')
   }
 
-  // In production, packs are bundled with the app
-  return path.join(process.resourcesPath, 'packs')
+  // In production, use userData so the directory is writable
+  return path.join(app.getPath('userData'), 'packs')
+}
+
+/**
+ * Initialize the packs directory in userData on first launch.
+ * Copies the bundled packs from app resources to the writable userData location.
+ */
+export async function initPacksDirectory(): Promise<void> {
+  if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
+    return // Development uses the repo packs folder directly
+  }
+
+  const targetDir = path.join(app.getPath('userData'), 'packs')
+  const exists = await fs
+    .access(targetDir)
+    .then(() => true)
+    .catch(() => false)
+
+  if (!exists) {
+    const sourceDir = path.join(process.resourcesPath, 'packs')
+    await fs.cp(sourceDir, targetDir, { recursive: true })
+  }
 }
 
 /**

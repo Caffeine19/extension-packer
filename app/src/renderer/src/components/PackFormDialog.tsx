@@ -1,5 +1,8 @@
 import type { Component } from 'solid-js'
 import { createSignal, createEffect, Show } from 'solid-js'
+import { Button } from './ui/Button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/Dialog'
+import { TextField, TextFieldInput, TextFieldTextArea, TextFieldLabel } from './ui/TextField'
 
 interface PackFormDialogProps {
   open: boolean
@@ -14,7 +17,6 @@ interface PackFormDialogProps {
     packName: string,
     updates: { displayName?: string; description?: string }
   ) => Promise<boolean>
-  /** When provided, the dialog operates in edit mode */
   editPack?: {
     name: string
     keyword: string
@@ -30,7 +32,6 @@ const PackFormDialog: Component<PackFormDialogProps> = (props) => {
 
   const isEditMode = () => !!props.editPack
 
-  // Pre-fill form when editing
   createEffect(() => {
     if (props.open && props.editPack) {
       setKeyword(props.editPack.keyword)
@@ -43,7 +44,6 @@ const PackFormDialog: Component<PackFormDialogProps> = (props) => {
     }
   })
 
-  // Auto-generate display name and pack ID from keyword
   const capitalizedKeyword = () => {
     const kw = keyword().trim()
     if (!kw) return ''
@@ -104,145 +104,99 @@ const PackFormDialog: Component<PackFormDialogProps> = (props) => {
     }
   }
 
-  const handleBackdropClick = (e: MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      props.onClose()
-    }
-  }
-
   return (
-    <Show when={props.open}>
-      <div
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-        onClick={handleBackdropClick}
-      >
-        <div class="bg-zinc-900 rounded-xl border border-zinc-800 shadow-2xl w-full max-w-md mx-4">
-          {/* Header */}
-          <div class="flex items-center justify-between px-6 pt-6 pb-4">
-            <h2 class="text-lg font-semibold text-zinc-100">
-              {isEditMode() ? 'Edit Extension Pack' : 'Create Extension Pack'}
-            </h2>
-            <button
-              onClick={() => props.onClose()}
-              class="p-1 text-zinc-400 hover:text-zinc-200 rounded transition-colors"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
+    <Dialog open={props.open} onOpenChange={(open) => !open && props.onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {isEditMode() ? 'Edit Extension Pack' : 'Create Extension Pack'}
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit}>
+          <div class="space-y-4">
+            {/* Keyword */}
+            <TextField>
+              <TextFieldLabel>Keyword</TextFieldLabel>
+              <TextFieldInput
+                type="text"
+                value={keyword()}
+                onInput={(e) => setKeyword(e.currentTarget.value)}
+                placeholder="e.g. Java, Vue 3, Python"
+                autofocus
+                disabled={isEditMode()}
+              />
+            </TextField>
+
+            {/* Auto-generated Display Name & Pack ID */}
+            <div class="space-y-2">
+              <TextField>
+                <TextFieldLabel>
+                  Display Name
+                  <span class="font-normal ml-1 opacity-60">(auto)</span>
+                </TextFieldLabel>
+                <TextFieldInput
+                  value={generatedDisplayName() || '—'}
+                  readOnly
+                  class="bg-muted/50"
                 />
-              </svg>
-            </button>
+              </TextField>
+              <TextField>
+                <TextFieldLabel>
+                  Pack ID
+                  <span class="font-normal ml-1 opacity-60">(auto)</span>
+                </TextFieldLabel>
+                <TextFieldInput
+                  value={packName() || '—'}
+                  readOnly
+                  class="bg-muted/50 font-mono text-muted-foreground"
+                />
+              </TextField>
+            </div>
+
+            {/* Description */}
+            <TextField>
+              <TextFieldLabel>
+                Description
+                <span class="font-normal ml-1 opacity-60">(optional)</span>
+              </TextFieldLabel>
+              <TextFieldTextArea
+                value={description()}
+                onInput={(e) => setDescription(e.currentTarget.value)}
+                placeholder="A brief description of this extension pack..."
+                rows={3}
+                class="resize-none"
+              />
+            </TextField>
+
+            {/* Error Message */}
+            <Show when={error()}>
+              <div class="px-3 py-2 bg-destructive/10 border border-destructive/50 rounded-md text-destructive text-sm">
+                {error()}
+              </div>
+            </Show>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} class="px-6 pb-6">
-            <div class="space-y-4">
-              {/* Keyword */}
-              <div>
-                <label class="block text-sm font-medium text-zinc-300 mb-1">Keyword</label>
-                <input
-                  type="text"
-                  value={keyword()}
-                  onInput={(e) => setKeyword(e.currentTarget.value)}
-                  placeholder="e.g. Java, Vue 3, Python"
-                  class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                  autofocus
-                  disabled={isEditMode()}
-                />
-              </div>
-
-              {/* Auto-generated Display Name & Pack ID */}
-              <div class="space-y-2">
-                <div>
-                  <label class="block text-xs font-medium text-zinc-400 mb-0.5">
-                    Display Name
-                    <span class="text-zinc-500 font-normal ml-1">(auto)</span>
-                  </label>
-                  <div class="px-3 py-1.5 bg-zinc-950 border border-zinc-800 rounded-md text-zinc-300 text-sm">
-                    {generatedDisplayName() || '—'}
-                  </div>
-                </div>
-                <div>
-                  <label class="block text-xs font-medium text-zinc-400 mb-0.5">
-                    Pack ID
-                    <span class="text-zinc-500 font-normal ml-1">(auto)</span>
-                  </label>
-                  <div class="px-3 py-1.5 bg-zinc-950 border border-zinc-800 rounded-md text-zinc-400 text-sm font-mono">
-                    {packName() || '—'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label class="block text-sm font-medium text-zinc-300 mb-1">
-                  Description
-                  <span class="text-zinc-500 font-normal ml-1">(optional)</span>
-                </label>
-                <textarea
-                  value={description()}
-                  onInput={(e) => setDescription(e.currentTarget.value)}
-                  placeholder="A brief description of this extension pack..."
-                  rows={3}
-                  class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 resize-none"
-                />
-              </div>
-
-              {/* Error Message */}
-              <Show when={error()}>
-                <div class="px-3 py-2 bg-red-900/50 border border-red-700 rounded-md text-red-300 text-sm">
-                  {error()}
-                </div>
+          <DialogFooter class="mt-6">
+            <Button type="button" variant="outline" onClick={() => props.onClose()}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!isValid() || submitting()}>
+              <Show when={submitting()}>
+                <i class="ph ph-spinner animate-spin" />
               </Show>
-            </div>
-
-            {/* Actions */}
-            <div class="flex justify-end gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => props.onClose()}
-                class="px-4 py-2 text-sm text-zinc-300 hover:text-zinc-100 bg-zinc-800 hover:bg-zinc-700 rounded-md transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={!isValid() || submitting()}
-                class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-500 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                <Show when={submitting()}>
-                  <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    />
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                </Show>
-                {submitting()
-                  ? isEditMode()
-                    ? 'Saving...'
-                    : 'Creating...'
-                  : isEditMode()
-                    ? 'Save'
-                    : 'Create'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </Show>
+              {submitting()
+                ? isEditMode()
+                  ? 'Saving...'
+                  : 'Creating...'
+                : isEditMode()
+                  ? 'Save'
+                  : 'Create'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 

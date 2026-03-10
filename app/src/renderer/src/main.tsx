@@ -1,6 +1,7 @@
 import './assets/main.css'
 
 import '@phosphor-icons/web/light'
+import '@phosphor-icons/web/regular'
 import '@phosphor-icons/web/bold'
 
 import { render } from 'solid-js/web'

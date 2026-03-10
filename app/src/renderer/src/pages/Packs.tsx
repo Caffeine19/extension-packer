@@ -4,6 +4,9 @@ import { usePackStore } from '../stores/pack'
 import { useExtensionStore } from '../stores/extension'
 import PackCard, { type ExtensionInfo } from '../components/PackCard'
 import PackFormDialog from '../components/PackFormDialog'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
+import { TextField, TextFieldInput } from '../components/ui/TextField'
 
 const Packs: Component = () => {
   const {
@@ -33,9 +36,6 @@ const Packs: Component = () => {
     | undefined
   >(undefined)
 
-  /**
-   * Extract keyword from display name, e.g. "Custom Extension Pack(Java)" → "Java"
-   */
   const extractKeyword = (displayName: string): string => {
     const match = displayName.match(/\((.+)\)\s*$/)
     return match ? match[1] : displayName
@@ -59,7 +59,6 @@ const Packs: Component = () => {
     await handleDeleteExtensionPack(packName)
   }
 
-  // Build a lookup map from extension ID to basic info
   const extensionsMap = createMemo<Record<string, ExtensionInfo>>(() => {
     const map: Record<string, ExtensionInfo> = {}
     for (const ext of extensions()) {
@@ -74,96 +73,63 @@ const Packs: Component = () => {
   })
 
   return (
-    <div class="flex-1 flex flex-col overflow-hidden bg-zinc-950">
-      <div class="shrink-0 px-6 pt-6 space-y-4">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xl font-bold text-zinc-100">Extension Packs</h2>
+    <div class="flex-1 flex flex-col overflow-hidden bg-background">
+      <div class="shrink-0 px-6 pt-4 pb-2 flex flex-col gap-4">
+        <div class="flex items-center justify-between min-h-[40px]">
+          <h2 class="text-2xl font-bold tracking-tight">Extension Packs</h2>
           <Show when={extensionPacks().length > 0}>
             <div class="flex items-center gap-2">
-              <span class="px-3 py-1 bg-green-900 text-green-300 rounded-full text-sm font-medium">
+              <Badge variant="default" round>
                 {filteredExtensionPacks().length} shown
-              </span>
+              </Badge>
               <Show when={packSearchQuery()}>
-                <span class="px-3 py-1 bg-blue-900 text-blue-300 rounded-full text-sm font-medium">
+                <Badge variant="success" round>
                   {filteredExtensionPacks().length} of {extensionPacks().length} found
-                </span>
+                </Badge>
               </Show>
             </div>
           </Show>
         </div>
 
         <div class="flex items-center gap-3">
-          <div class="relative flex-1">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg
-                class="h-5 w-5 text-zinc-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-            <input
-              type="text"
-              placeholder="Search packs by name, description, or contained extensions..."
-              value={packSearchQuery()}
-              onInput={(e) => handlePackSearchInput(e.currentTarget.value)}
-              class="block w-full pl-10 pr-10 py-2 border border-zinc-700 rounded-md leading-5 bg-zinc-900 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:placeholder-zinc-400 focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
-            />
-            <Show when={packSearchQuery()}>
-              <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                <button
-                  onClick={clearPackSearch}
-                  class="text-zinc-500 hover:text-zinc-300 focus:outline-none"
-                  title="Clear search"
-                >
-                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
+          <TextField class="flex-1">
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="ph ph-magnifying-glass text-xl text-muted-foreground" />
               </div>
-            </Show>
-          </div>
-          <button
+              <TextFieldInput
+                type="text"
+                placeholder="Search packs by name, description, or contained extensions..."
+                value={packSearchQuery()}
+                onInput={(e) => handlePackSearchInput(e.currentTarget.value)}
+                class="pl-10 pr-10"
+              />
+              <Show when={packSearchQuery()}>
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <button
+                    onClick={clearPackSearch}
+                    class="text-muted-foreground hover:text-foreground focus:outline-none"
+                    title="Clear search"
+                  >
+                    <i class="ph ph-x text-xl" />
+                  </button>
+                </div>
+              </Show>
+            </div>
+          </TextField>
+          <Button
             onClick={handleGetExtensionPacks}
             disabled={packLoading()}
-            class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2"
+            size="sm"
+            class="whitespace-nowrap"
           >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            <i class="ph ph-arrows-clockwise" />
             {packLoading() ? 'Loading...' : 'Reload'}
-          </button>
-          <button
-            onClick={handleOpenCreate}
-            class="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-500 whitespace-nowrap flex items-center gap-2"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
+          </Button>
+          <Button onClick={handleOpenCreate} size="sm" class="whitespace-nowrap">
+            <i class="ph ph-plus" />
             Create
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -173,47 +139,28 @@ const Packs: Component = () => {
             when={filteredExtensionPacks().length > 0}
             fallback={
               <div class="text-center py-12">
-                <div class="text-zinc-500 mb-4">
-                  <svg
-                    class="w-12 h-12 mx-auto"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                    />
-                  </svg>
+                <div class="text-muted-foreground mb-4">
+                  <i class="ph ph-package text-5xl block mx-auto" />
                 </div>
                 <Show
                   when={packSearchQuery()}
                   fallback={
                     <div>
-                      <h3 class="text-lg font-medium text-zinc-100 mb-2">
-                        No extension packs found
-                      </h3>
-                      <p class="text-zinc-400">
+                      <h3 class="text-lg font-medium mb-2">No extension packs found</h3>
+                      <p class="text-muted-foreground">
                         Click "Load Extension Packs" to scan for extension packs in your workspace
                       </p>
                     </div>
                   }
                 >
                   <div>
-                    <h3 class="text-lg font-medium text-zinc-100 mb-2">
-                      No packs match your search
-                    </h3>
-                    <p class="text-zinc-400 mb-4">
+                    <h3 class="text-lg font-medium mb-2">No packs match your search</h3>
+                    <p class="text-muted-foreground mb-4">
                       Try adjusting your search terms or clearing the search.
                     </p>
-                    <button
-                      onClick={clearPackSearch}
-                      class="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-500 transition-colors"
-                    >
+                    <Button onClick={clearPackSearch} size="sm">
                       Clear Search
-                    </button>
+                    </Button>
                   </div>
                 </Show>
               </div>
