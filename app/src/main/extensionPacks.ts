@@ -268,8 +268,14 @@ export async function buildExtensionPack(
     throw new Error(`Extension pack ${packName} not found`)
   }
 
-  // Build the pack using vsce
-  const buildCommand = `cd "${pack.folderPath}" && npx vsce package`
+  // Build the pack using vsce.
+  // Wrap in a login shell so that PATH includes nvm / Homebrew / system node
+  // regardless of whether the app was launched from a terminal or the Dock.
+  const rawCommand = `cd "${pack.folderPath}" && npx vsce package`
+  const buildCommand =
+    process.platform === 'darwin' || process.platform === 'linux'
+      ? `/bin/sh -l -c ${JSON.stringify(rawCommand)}`
+      : rawCommand
 
   console.log(`Building extension pack: ${buildCommand}`)
   const { stdout, stderr } = await promisifyExec(buildCommand)
@@ -390,8 +396,12 @@ export async function installExtensionPack(packName: ExtensionPack['name']): Pro
   // Build the vsix first
   const { outputPath } = await buildExtensionPack(packName)
 
-  // Install via code CLI
-  const installCommand = `code --install-extension "${outputPath}" --force`
+  // Install via code CLI (wrap in login shell so PATH includes the `code` binary)
+  const rawInstallCommand = `code --install-extension "${outputPath}" --force`
+  const installCommand =
+    process.platform === 'darwin' || process.platform === 'linux'
+      ? `/bin/sh -l -c ${JSON.stringify(rawInstallCommand)}`
+      : rawInstallCommand
   console.log(`Installing extension pack: ${installCommand}`)
 
   const { stderr } = await promisifyExec(installCommand)
