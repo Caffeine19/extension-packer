@@ -5,6 +5,7 @@ import { app, dialog } from 'electron'
 import { CUSTOM_EXTENSION_CATEGORY } from '@shared/pack'
 import type { ExtensionPack } from '@shared/pack'
 import { promisifyExec } from './utils/promisifyExec'
+import { loadSettings } from './settings'
 
 /** Resolve the user's login shell for spawning child processes with the correct PATH. */
 const getUserShell = (): string => process.env.SHELL || '/bin/zsh'
@@ -384,8 +385,10 @@ export async function deleteExtensionPack(packName: ExtensionPack['name']): Prom
 /**
  * Get the VS Code extensions directory path.
  */
-function getVSCodeExtensionsDir(): string {
-  return path.join(os.homedir(), '.vscode', 'extensions')
+async function getVSCodeExtensionsDir(): Promise<string> {
+  const settings = await loadSettings()
+  const folder = settings.useInsiders ? '.vscode-insiders' : '.vscode'
+  return path.join(os.homedir(), folder, 'extensions')
 }
 
 /**
@@ -402,7 +405,9 @@ export async function installExtensionPack(packName: ExtensionPack['name']): Pro
   const { outputPath } = await buildExtensionPack(packName)
 
   // Install via code CLI (wrap in login+interactive shell so PATH includes the `code` binary)
-  const rawInstallCommand = `code --install-extension "${outputPath}" --force`
+  const settings = await loadSettings()
+  const codeCli = settings.useInsiders ? 'code-insiders' : 'code'
+  const rawInstallCommand = `${codeCli} --install-extension "${outputPath}" --force`
   const installCommand =
     process.platform === 'darwin' || process.platform === 'linux'
       ? `${getUserShell()} -l -i -c ${JSON.stringify(rawInstallCommand)}`
@@ -441,7 +446,7 @@ export async function uninstallExtensionPack(packName: ExtensionPack['name']): P
     throw new Error(`Extension pack ${packName} not found`)
   }
 
-  const extensionsDir = getVSCodeExtensionsDir()
+  const extensionsDir = await getVSCodeExtensionsDir()
   const extensionsJsonPath = path.join(extensionsDir, 'extensions.json')
 
   // Read extensions.json to find the installed pack

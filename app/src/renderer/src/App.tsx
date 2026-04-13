@@ -1,10 +1,11 @@
 import type { Component } from 'solid-js'
-import { Router, Route, type RouteSectionProps } from '@solidjs/router'
-import { onMount } from 'solid-js'
+import { Router, Route, type RouteSectionProps, useNavigate } from '@solidjs/router'
+import { onMount, onCleanup } from 'solid-js'
 import Sidebar from './components/Sidebar'
 import Extensions from './pages/Extensions'
 import Packs from './pages/Packs'
 import Ignored from './pages/Ignored'
+import Settings from './pages/Settings'
 import { useExtensionStore } from './stores/extension'
 import { usePackStore } from './stores/pack'
 import { Toaster } from './components/ui/Sonner'
@@ -14,12 +15,20 @@ const Layout: Component<RouteSectionProps> = (props) => {
     useExtensionStore()
 
   const { extensionPacks, handleGetExtensionPacks } = usePackStore()
+  const navigate = useNavigate()
 
   // Initialize data on app mount
   onMount(() => {
     handleGetExtensions()
     handleGetExtensionPacks()
     handleGetIgnoredExtensions()
+  })
+
+  // Listen for menu-triggered navigation (e.g. Cmd+,)
+  onMount(() => {
+    const handler = (_event: unknown, path: string) => navigate(path)
+    window.electron.ipcRenderer.on('navigate', handler)
+    onCleanup(() => window.electron.ipcRenderer.removeListener('navigate', handler))
   })
 
   // Memos for counts
@@ -54,6 +63,7 @@ const App: Component = () => {
         <Route path="/extensions" component={() => <Extensions />} />
         <Route path="/packs" component={() => <Packs />} />
         <Route path="/ignored" component={() => <Ignored />} />
+        <Route path="/settings" component={() => <Settings />} />
       </Router>
       <Toaster />
     </>

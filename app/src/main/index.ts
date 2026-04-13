@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, protocol, net } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, protocol, net, Menu } from 'electron'
 import { join } from 'path'
 import { pathToFileURL } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -19,6 +19,7 @@ import {
   initPacksDirectory
 } from './extensionPacks'
 import { getIgnoredExtensions, toggleIgnoredExtension } from './ignoredExtensions'
+import { getSettings, updateSettings } from './settings'
 import {
   AddExtensionToPack,
   BuildExtensionPack,
@@ -38,6 +39,7 @@ import type {
   GetIgnoredExtensions,
   ToggleIgnoredExtension
 } from '@shared/extension'
+import type { GetSettings, UpdateSettings } from '@shared/settings'
 import { defineIPC, IPCChannel } from './utils/defineIPC'
 
 // Register custom protocol for pack icons
@@ -45,7 +47,7 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'pack-icon', privileges: { bypassCSP: true, supportFetchAPI: true } }
 ])
 
-function createWindow(): void {
+function createWindow(): BrowserWindow {
   const vibrancyOptions: Electron.BrowserWindowConstructorOptions = {
     vibrancy: 'under-window',
     backgroundColor: '#00000000', // transparent hexadecimal or anything with transparency,
@@ -96,6 +98,82 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  return mainWindow
+}
+
+function buildMenu(mainWindow: BrowserWindow): void {
+  const isMac = process.platform === 'darwin'
+
+  const template: Electron.MenuItemConstructorOptions[] = [
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: 'about' as const },
+              { type: 'separator' as const },
+              {
+                label: 'Settings…',
+                accelerator: 'CmdOrCtrl+,',
+                click: () => mainWindow.webContents.send('navigate', '/settings')
+              },
+              { type: 'separator' as const },
+              { role: 'services' as const },
+              { type: 'separator' as const },
+              { role: 'hide' as const },
+              { role: 'hideOthers' as const },
+              { role: 'unhide' as const },
+              { type: 'separator' as const },
+              { role: 'quit' as const }
+            ]
+          }
+        ]
+      : []),
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' },
+        ...(!isMac
+          ? [
+              { type: 'separator' as const },
+              {
+                label: 'Settings…',
+                accelerator: 'CmdOrCtrl+,',
+                click: () => mainWindow.webContents.send('navigate', '/settings')
+              }
+            ]
+          : [])
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        ...(isMac ? [{ type: 'separator' as const }, { role: 'front' as const }] : [])
+      ]
+    }
+  ]
+
+  const menu = Menu.buildFromTemplate(template)
+  Menu.setApplicationMenu(menu)
 }
 
 // This method will be called when Electron has finished
@@ -345,12 +423,37 @@ app.whenReady().then(async () => {
     }
   )
 
-  createWindow()
+  // Handle settings
+  defineIPC.handle<GetSettings>(ipcMain, IPCChannel.GET_SETTINGS, async () => {
+    try {
+      const settings = await getSettings()
+      return { success: true, data: settings }
+    } catch (error) {
+      console.error('Failed to get settings:', error)
+      return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  defineIPC.handle<UpdateSettings>(ipcMain, IPCChannel.UPDATE_SETTINGS, async (_, settings) => {
+    try {
+      const updated = await updateSettings(settings)
+      return { success: true, data: updated }
+    } catch (error) {
+      console.error('Failed to update settings:', error)
+      return { success: false, msg: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  const mainWindow = createWindow()
+  buildMenu(mainWindow)
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) {
+      const win = createWindow()
+      buildMenu(win)
+    }
   })
 })
 

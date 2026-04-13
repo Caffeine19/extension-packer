@@ -21,7 +21,10 @@ export enum IPCChannel {
 
   GET_IGNORED_EXTENSIONS = 'get-ignored-extensions',
   TOGGLE_IGNORED_EXTENSION = 'toggle-ignored-extension',
-  CLEAR_IGNORED_EXTENSIONS = 'clear-ignored-extensions'
+  CLEAR_IGNORED_EXTENSIONS = 'clear-ignored-extensions',
+
+  GET_SETTINGS = 'get-settings',
+  UPDATE_SETTINGS = 'update-settings'
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -2,6 +2,7 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import * as os from 'os'
 import type { InstalledExtension } from '@shared/extension'
+import { loadSettings } from './settings'
 
 // Helper function to convert icon file to base64 data URL
 async function getIconDataUrl(iconPath: string): Promise<string | undefined> {
@@ -233,5 +234,7 @@ export async function getInstalledExtensions(): Promise<{
  * Get installed extensions for the primary VS Code installation only
  */
 export async function getPrimaryInstalledExtensions(): Promise<InstalledExtension[]> {
-  return getExtensionsForScheme('vscode')
+  const settings = await loadSettings()
+  const scheme = settings.useInsiders ? 'vscode-insiders' : 'vscode'
+  return getExtensionsForScheme(scheme)
 }

@@ -33,7 +33,9 @@ const api: ExtensionAPI = {
   getIgnoredExtensions: () => ipcRenderer.invoke(IPCChannel.GET_IGNORED_EXTENSIONS),
   toggleIgnoredExtension: (extensionId) =>
     ipcRenderer.invoke(IPCChannel.TOGGLE_IGNORED_EXTENSION, extensionId),
-  clearIgnoredExtensions: () => ipcRenderer.invoke(IPCChannel.CLEAR_IGNORED_EXTENSIONS)
+  clearIgnoredExtensions: () => ipcRenderer.invoke(IPCChannel.CLEAR_IGNORED_EXTENSIONS),
+  getSettings: () => ipcRenderer.invoke(IPCChannel.GET_SETTINGS),
+  updateSettings: (settings) => ipcRenderer.invoke(IPCChannel.UPDATE_SETTINGS, settings)
 } // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise
 // just add to the DOM global.

@@ -18,6 +18,7 @@ import type {
   InstallExtensionPack,
   UninstallExtensionPack
 } from './pack'
+import type { GetSettings, UpdateSettings } from './settings'
 
 export interface ExtensionAPI {
   getPrimaryExtensions: GetPrimaryExtensions
@@ -36,4 +37,6 @@ export interface ExtensionAPI {
   getIgnoredExtensions: GetIgnoredExtensions
   toggleIgnoredExtension: ToggleIgnoredExtension
   clearIgnoredExtensions: ClearIgnoredExtensions
+  getSettings: GetSettings
+  updateSettings: UpdateSettings
 }

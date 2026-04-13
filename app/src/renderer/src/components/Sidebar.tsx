@@ -93,6 +93,19 @@ const Sidebar: Component<SidebarProps> = (props) => {
             </A>
           )}
         </For>
+
+        <A
+          href="/settings"
+          class={cn(
+            'flex w-full items-center rounded-md px-3 py-2 text-left transition-colors duration-200',
+            isActive('/settings')
+              ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+              : 'text-sidebar-foreground hover:bg-sidebar-primary/40 hover:text-sidebar-accent-foreground'
+          )}
+        >
+          <i class="ph ph-gear mr-3 text-lg" />
+          <span class="text-sm font-medium">Settings</span>
+        </A>
       </nav>
 
       <div class="mx-8 h-px bg-zinc-600/60" />
