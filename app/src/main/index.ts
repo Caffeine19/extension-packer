@@ -65,6 +65,8 @@ function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
+    minWidth: 760,
+    minHeight: 500,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -72,7 +74,7 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     },
-    trafficLightPosition: { x: 24, y: 10 },
+    trafficLightPosition: { x: 20, y: 10 },
 
     ...customTitleBarOptions,
     ...vibrancyOptions

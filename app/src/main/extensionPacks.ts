@@ -6,6 +6,9 @@ import { CUSTOM_EXTENSION_CATEGORY } from '@shared/pack'
 import type { ExtensionPack } from '@shared/pack'
 import { promisifyExec } from './utils/promisifyExec'
 
+/** Resolve the user's login shell for spawning child processes with the correct PATH. */
+const getUserShell = (): string => process.env.SHELL || '/bin/zsh'
+
 /**
  * Get the packs directory path for both development and production
  */
@@ -269,12 +272,14 @@ export async function buildExtensionPack(
   }
 
   // Build the pack using vsce.
-  // Wrap in a login shell so that PATH includes nvm / Homebrew / system node
+  // Wrap in a login+interactive shell so that PATH includes nvm / Homebrew / system node
   // regardless of whether the app was launched from a terminal or the Dock.
+  // Using the user's actual shell (typically /bin/zsh on macOS) with -i ensures
+  // .zshrc / .bashrc are sourced, which is where nvm/volta/fnm set up PATH.
   const rawCommand = `cd "${pack.folderPath}" && npx vsce package`
   const buildCommand =
     process.platform === 'darwin' || process.platform === 'linux'
-      ? `/bin/sh -l -c ${JSON.stringify(rawCommand)}`
+      ? `${getUserShell()} -l -i -c ${JSON.stringify(rawCommand)}`
       : rawCommand
 
   console.log(`Building extension pack: ${buildCommand}`)
@@ -396,11 +401,11 @@ export async function installExtensionPack(packName: ExtensionPack['name']): Pro
   // Build the vsix first
   const { outputPath } = await buildExtensionPack(packName)
 
-  // Install via code CLI (wrap in login shell so PATH includes the `code` binary)
+  // Install via code CLI (wrap in login+interactive shell so PATH includes the `code` binary)
   const rawInstallCommand = `code --install-extension "${outputPath}" --force`
   const installCommand =
     process.platform === 'darwin' || process.platform === 'linux'
-      ? `/bin/sh -l -c ${JSON.stringify(rawInstallCommand)}`
+      ? `${getUserShell()} -l -i -c ${JSON.stringify(rawInstallCommand)}`
       : rawInstallCommand
   console.log(`Installing extension pack: ${installCommand}`)
 

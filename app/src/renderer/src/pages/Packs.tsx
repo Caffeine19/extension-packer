@@ -14,12 +14,16 @@ const Packs: Component = () => {
     packLoading,
     filteredExtensionPacks,
     packSearchQuery,
+    buildingAll,
+    installingAll,
     handleGetExtensionPacks,
     handleCreateExtensionPack,
     handleUpdateExtensionPack,
     handleDeleteExtensionPack,
     handleInstallExtensionPack,
     handleUninstallExtensionPack,
+    handleBuildAllPacks,
+    handleInstallAllPacks,
     handlePackSearchInput,
     clearPackSearch
   } = usePackStore()
@@ -73,18 +77,22 @@ const Packs: Component = () => {
   })
 
   return (
-    <div class="flex-1 flex flex-col overflow-hidden bg-background">
-      <div class="shrink-0 px-6 pt-4 pb-2 flex flex-col gap-4">
-        <div class="flex items-center justify-between min-h-[40px]">
+    <div class="bg-background flex flex-1 flex-col overflow-hidden">
+      <div class="flex shrink-0 flex-col gap-4 px-6 pt-4 pb-2">
+        <div class="flex min-h-[40px] items-center justify-between">
           <h2 class="text-2xl font-bold tracking-tight">Extension Packs</h2>
           <Show when={extensionPacks().length > 0}>
             <div class="flex items-center gap-2">
-              <Badge variant="default" round>
-                {filteredExtensionPacks().length} shown
-              </Badge>
-              <Show when={packSearchQuery()}>
-                <Badge variant="success" round>
-                  {filteredExtensionPacks().length} of {extensionPacks().length} found
+              <Show
+                when={packSearchQuery()}
+                fallback={
+                  <Badge variant="default" round>
+                    {filteredExtensionPacks().length}
+                  </Badge>
+                }
+              >
+                <Badge variant="default" round>
+                  {filteredExtensionPacks().length} / {extensionPacks().length}
                 </Badge>
               </Show>
             </div>
@@ -94,18 +102,18 @@ const Packs: Component = () => {
         <div class="flex items-center gap-3">
           <TextField class="flex-1">
             <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i class="ph ph-magnifying-glass text-xl text-muted-foreground" />
+              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <i class="ph ph-magnifying-glass text-muted-foreground text-xl" />
               </div>
               <TextFieldInput
                 type="text"
                 placeholder="Search packs by name, description, or contained extensions..."
                 value={packSearchQuery()}
                 onInput={(e) => handlePackSearchInput(e.currentTarget.value)}
-                class="pl-10 pr-10"
+                class="pr-10 pl-10"
               />
               <Show when={packSearchQuery()}>
-                <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                   <button
                     onClick={clearPackSearch}
                     class="text-muted-foreground hover:text-foreground focus:outline-none"
@@ -126,27 +134,52 @@ const Packs: Component = () => {
             <i class="ph ph-arrows-clockwise" />
             {packLoading() ? 'Loading...' : 'Reload'}
           </Button>
-          <Button onClick={handleOpenCreate} size="sm" class="whitespace-nowrap">
+          <Button
+            onClick={handleOpenCreate}
+            size="sm"
+            variant="secondary"
+            class="whitespace-nowrap"
+          >
             <i class="ph ph-plus" />
             Create
+          </Button>
+          <Button
+            onClick={handleBuildAllPacks}
+            disabled={buildingAll() || extensionPacks().length === 0}
+            size="sm"
+            variant="secondary"
+            class="whitespace-nowrap"
+          >
+            <i class="ph ph-hammer" />
+            {buildingAll() ? 'Building...' : 'Build All'}
+          </Button>
+          <Button
+            onClick={handleInstallAllPacks}
+            disabled={installingAll() || extensionPacks().length === 0}
+            size="sm"
+            variant="secondary"
+            class="whitespace-nowrap"
+          >
+            <i class="ph ph-download-simple" />
+            {installingAll() ? 'Installing...' : 'Install All'}
           </Button>
         </div>
       </div>
 
-      <main class="flex-1 overflow-auto px-6 pb-6 pt-4">
+      <main class="flex-1 overflow-auto px-6 pt-4 pb-6">
         <div>
           <Show
             when={filteredExtensionPacks().length > 0}
             fallback={
-              <div class="text-center py-12">
+              <div class="py-12 text-center">
                 <div class="text-muted-foreground mb-4">
-                  <i class="ph ph-package text-5xl block mx-auto" />
+                  <i class="ph ph-package mx-auto block text-5xl" />
                 </div>
                 <Show
                   when={packSearchQuery()}
                   fallback={
                     <div>
-                      <h3 class="text-lg font-medium mb-2">No extension packs found</h3>
+                      <h3 class="mb-2 text-lg font-medium">No extension packs found</h3>
                       <p class="text-muted-foreground">
                         Click "Load Extension Packs" to scan for extension packs in your workspace
                       </p>
@@ -154,11 +187,12 @@ const Packs: Component = () => {
                   }
                 >
                   <div>
-                    <h3 class="text-lg font-medium mb-2">No packs match your search</h3>
+                    <h3 class="mb-2 text-lg font-medium">No packs match your search</h3>
                     <p class="text-muted-foreground mb-4">
                       Try adjusting your search terms or clearing the search.
                     </p>
                     <Button onClick={clearPackSearch} size="sm">
+                      <i class="ph ph-x" style={{ 'font-size': '16px' }} />
                       Clear Search
                     </Button>
                   </div>
@@ -166,7 +200,7 @@ const Packs: Component = () => {
               </div>
             }
           >
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="3xl:grid-cols-3 grid grid-cols-1 gap-6 xl:grid-cols-2">
               <For each={filteredExtensionPacks()}>
                 {(pack) => (
                   <PackCard

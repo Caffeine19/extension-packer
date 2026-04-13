@@ -22,7 +22,7 @@ const Checkbox = <T extends ValidComponent = 'div'>(
       {...others}
     >
       <CheckboxPrimitive.Input class="peer" />
-      <CheckboxPrimitive.Control class="size-4 shrink-0 rounded-sm border border-primary ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 data-[checked]:border-none data-[indeterminate]:border-none data-[checked]:bg-primary data-[indeterminate]:bg-primary data-[checked]:text-primary-foreground data-[indeterminate]:text-primary-foreground">
+      <CheckboxPrimitive.Control class="border-primary ring-offset-background peer-focus-visible:ring-ring data-[checked]:bg-primary data-[indeterminate]:bg-primary data-[checked]:text-primary-foreground data-[indeterminate]:text-primary-foreground size-4 shrink-0 rounded-sm border peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 data-[checked]:border-none data-[indeterminate]:border-none">
         <CheckboxPrimitive.Indicator>
           <Switch>
             <Match when={!others.indeterminate}>
@@ -71,7 +71,7 @@ const CheckboxLabel = <T extends ValidComponent = 'label'>(
   return (
     <CheckboxPrimitive.Label
       class={cn(
-        'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
+        'text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
         local.class
       )}
       {...others}

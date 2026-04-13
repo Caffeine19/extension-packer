@@ -1,5 +1,6 @@
 import { ExtensionPack } from '@shared/pack'
 import { createSignal, createMemo } from 'solid-js'
+import { toast } from 'solid-sonner'
 import { searchMultipleFields, createDebouncedSetter } from '../lib/searchUtils'
 
 // Extension Pack State
@@ -169,6 +170,69 @@ const handlePackSearchInput = (value: string) => {
   debouncedSetPackSearchQuery(value)
 }
 
+const [buildingAll, setBuildingAll] = createSignal(false)
+const [installingAll, setInstallingAll] = createSignal(false)
+
+const handleBuildAllPacks = async (): Promise<void> => {
+  const packs = extensionPacks()
+  if (packs.length === 0) return
+  setBuildingAll(true)
+  let successCount = 0
+  let failCount = 0
+  try {
+    for (const pack of packs) {
+      try {
+        const result = await window.api.buildExtensionPack(pack.name)
+        if (result.success) {
+          successCount++
+        } else {
+          failCount++
+        }
+      } catch {
+        failCount++
+      }
+    }
+    if (failCount === 0) {
+      toast.success(`All ${successCount} packs built successfully!`)
+    } else {
+      toast.warning(`Built ${successCount} packs, ${failCount} failed`)
+    }
+  } finally {
+    setBuildingAll(false)
+  }
+}
+
+const handleInstallAllPacks = async (): Promise<void> => {
+  const packs = extensionPacks()
+  if (packs.length === 0) return
+  setInstallingAll(true)
+  let successCount = 0
+  let failCount = 0
+  try {
+    for (const pack of packs) {
+      try {
+        const result = await window.api.installExtensionPack(pack.name)
+        if (result.success) {
+          successCount++
+        } else {
+          failCount++
+        }
+      } catch {
+        failCount++
+      }
+    }
+    if (failCount === 0) {
+      toast.success(`All ${successCount} packs installed successfully!`, {
+        description: 'Restart VS Code to activate.'
+      })
+    } else {
+      toast.warning(`Installed ${successCount} packs, ${failCount} failed`)
+    }
+  } finally {
+    setInstallingAll(false)
+  }
+}
+
 export const usePackStore = () => ({
   // State
   extensionPacks,
@@ -182,6 +246,10 @@ export const usePackStore = () => ({
   filteredExtensionPacks,
   packsCount,
 
+  // Batch state
+  buildingAll,
+  installingAll,
+
   // Handlers
   handleGetExtensionPacks,
   handleAddExtensionToPack,
@@ -190,6 +258,8 @@ export const usePackStore = () => ({
   handleDeleteExtensionPack,
   handleInstallExtensionPack,
   handleUninstallExtensionPack,
+  handleBuildAllPacks,
+  handleInstallAllPacks,
   clearPackSearch,
   handlePackSearchInput
 })

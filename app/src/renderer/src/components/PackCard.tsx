@@ -1,16 +1,13 @@
 import type { Component } from 'solid-js'
-import { createSignal, For, Show } from 'solid-js'
+import { createSignal, Show } from 'solid-js'
 import { toast } from 'solid-sonner'
 import { Button } from './ui/Button'
 import { Card } from './ui/Card'
 import { Separator } from './ui/Separator'
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/Tooltip'
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogTitle,
-  AlertDialogDescription
-} from './ui/AlertDialog'
+import DeletePackDialog from './DeletePackDialog'
+import UninstallPackDialog from './UninstallPackDialog'
+import ExtensionAvatarStack from './ExtensionAvatarStack'
 
 export interface ExtensionInfo {
   id: string
@@ -46,7 +43,6 @@ interface PackCardProps {
 const PackCard: Component<PackCardProps> = (props) => {
   const [building, setBuilding] = createSignal(false)
   const [uploadingIcon, setUploadingIcon] = createSignal(false)
-  const [extensionsExpanded, setExtensionsExpanded] = createSignal(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = createSignal(false)
   const [showUninstallConfirm, setShowUninstallConfirm] = createSignal(false)
   const [installing, setInstalling] = createSignal(false)
@@ -160,20 +156,20 @@ const PackCard: Component<PackCardProps> = (props) => {
   const Spinner = () => <i class="ph ph-spinner animate-spin" />
 
   return (
-    <Card class="group/card p-6 hover:shadow-lg transition-shadow flex flex-col">
-      <div class="flex justify-between items-start mb-4">
+    <Card class="group/card flex flex-col p-6 transition-shadow hover:shadow-lg">
+      <div class="mb-4 flex items-start justify-between">
         {/* Icon */}
-        <div class="flex-shrink-0 mr-4">
+        <div class="mr-4 flex-shrink-0">
           <button
             onClick={handleUploadIcon}
             disabled={uploadingIcon()}
-            class={`group relative w-16 h-16 rounded-lg overflow-hidden transition-colors cursor-pointer disabled:cursor-wait ${props.pack.icon ? 'border-0' : 'border border-border hover:border-primary'}`}
+            class={`group relative h-16 w-16 cursor-pointer overflow-hidden rounded-lg transition-colors disabled:cursor-wait ${props.pack.icon ? 'border-0' : 'border-border hover:border-primary border'}`}
             title="Click to upload pack icon"
           >
             <Show
               when={props.pack.icon}
               fallback={
-                <div class="w-full h-full bg-muted flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                <div class="bg-muted text-muted-foreground group-hover:text-primary flex h-full w-full items-center justify-center transition-colors">
                   <i class="ph ph-image text-2xl" />
                 </div>
               }
@@ -181,36 +177,40 @@ const PackCard: Component<PackCardProps> = (props) => {
               <img
                 src={props.pack.icon}
                 alt={props.pack.displayName}
-                class="w-full h-full object-cover"
+                class="h-full w-full rounded-full object-cover"
               />
-              <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <div class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                 <i class="ph ph-image text-xl text-white" />
               </div>
               <button
                 onClick={handleRemoveIcon}
-                class="absolute top-0.5 right-0.5 w-5 h-5 bg-muted hover:bg-accent rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10"
+                class="bg-muted hover:bg-accent absolute top-0.5 right-0.5 z-10 flex h-5 w-5 items-center justify-center rounded-full opacity-0 transition-opacity group-hover:opacity-100"
                 title="Remove icon"
               >
-                <i class="ph-bold ph-x text-xs text-foreground" />
+                <i class="ph-bold ph-x text-foreground text-xs" />
               </button>
             </Show>
             <Show when={uploadingIcon()}>
-              <div class="absolute inset-0 bg-black/60 flex items-center justify-center">
+              <div class="absolute inset-0 flex items-center justify-center bg-black/60">
                 <Spinner />
               </div>
             </Show>
           </button>
         </div>
 
-        <div class="flex-1 min-w-0">
-          <h3 class="text-xl font-semibold truncate mb-1">{props.pack.displayName}</h3>
-          <p class="text-sm text-muted-foreground mb-2">v{props.pack.version}</p>
+        <div class="min-w-0 flex-1">
+          <h3 class="truncate text-lg font-semibold">{props.pack.displayName}</h3>
+          <p class="text-muted-foreground truncate text-xs" title={props.pack.name}>
+            {props.pack.name}
+          </p>
+          <p class="text-muted-foreground mb-1 text-xs">v{props.pack.version}</p>
+
           {props.pack.description && (
-            <p class="text-muted-foreground text-sm mb-3 line-clamp-2">{props.pack.description}</p>
+            <p class="text-muted-foreground mb-3 line-clamp-2 text-sm">{props.pack.description}</p>
           )}
         </div>
 
-        <div class="flex gap-1 ml-4 opacity-0 group-hover/card:opacity-100 transition-opacity">
+        <div class="ml-4 flex gap-1 opacity-0 transition-opacity group-hover/card:opacity-100">
           <Tooltip>
             <TooltipTrigger
               as={(p: Record<string, unknown>) => (
@@ -273,59 +273,19 @@ const PackCard: Component<PackCardProps> = (props) => {
         </div>
       </div>
 
-      {/* Extension Preview */}
+      {/* Extension Preview - Avatar Stack */}
       <Show when={props.pack.extensionPack.length > 0}>
         <Separator class="my-4" />
-        <div>
-          <button
-            onClick={() => setExtensionsExpanded((v) => !v)}
-            class="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full text-left cursor-pointer"
-          >
-            <i
-              class={`ph ph-caret-right text-sm transition-transform flex-shrink-0 ${extensionsExpanded() ? 'rotate-90' : ''}`}
-            />
-            Extensions included ({props.pack.extensionPack.length})
-          </button>
-          <Show when={extensionsExpanded()}>
-            <div class="mt-2 pl-5 max-h-60 overflow-y-auto">
-              <div class="space-y-2">
-                <For each={props.pack.extensionPack}>
-                  {(extId) => {
-                    const info = () => props.extensionsMap?.[extId]
-                    return (
-                      <div class="flex items-center gap-2.5 text-sm" title={extId}>
-                        <Show
-                          when={info()?.icon}
-                          fallback={
-                            <div class="w-6 h-6 bg-muted rounded flex-shrink-0 flex items-center justify-center text-muted-foreground text-[9px] font-bold">
-                              {(info()?.name || extId).charAt(0).toUpperCase()}
-                            </div>
-                          }
-                        >
-                          <img
-                            src={info()!.icon}
-                            alt=""
-                            class="w-6 h-6 rounded flex-shrink-0 object-cover"
-                          />
-                        </Show>
-                        <span class="text-foreground/80 truncate">{info()?.name || extId}</span>
-                      </div>
-                    )
-                  }}
-                </For>
-              </div>
-            </div>
-          </Show>
-        </div>
+        <ExtensionAvatarStack
+          extensionIds={props.pack.extensionPack}
+          extensionsMap={props.extensionsMap}
+        />
       </Show>
 
       {/* Pack ID & Build */}
-      <Separator class="mt-auto mb-4" />
-      <div>
-        <p class="text-xs text-muted-foreground truncate mb-3" title={props.pack.name}>
-          ID: {props.pack.name}
-        </p>
+      <Separator class="my-4" />
 
+      <div>
         <div class="flex gap-2">
           <Button
             onClick={() => handleBuildPack(props.pack.name)}
@@ -333,7 +293,10 @@ const PackCard: Component<PackCardProps> = (props) => {
             class="flex-1"
             size="sm"
           >
-            <Show when={building()}>
+            <Show
+              when={building()}
+              fallback={<i class="ph ph-hammer" style={{ 'font-size': '16px' }} />}
+            >
               <Spinner />
             </Show>
             {building() ? 'Building...' : 'Build Pack'}
@@ -341,49 +304,19 @@ const PackCard: Component<PackCardProps> = (props) => {
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteConfirm()} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
-          <AlertDialogTitle>Delete Extension Pack</AlertDialogTitle>
-          <AlertDialogDescription>
-            <p class="mb-1">Are you sure you want to delete</p>
-            <p class="font-medium text-foreground mb-4">{props.pack.displayName}?</p>
-            <p class="text-destructive text-xs">
-              This action cannot be undone. The pack folder will be permanently removed.
-            </p>
-          </AlertDialogDescription>
-          <div class="flex justify-end gap-3 mt-4">
-            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmDelete}>
-              Delete
-            </Button>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeletePackDialog
+        open={showDeleteConfirm()}
+        onOpenChange={setShowDeleteConfirm}
+        displayName={props.pack.displayName}
+        onConfirm={handleConfirmDelete}
+      />
 
-      {/* Uninstall Confirmation Dialog */}
-      <AlertDialog open={showUninstallConfirm()} onOpenChange={setShowUninstallConfirm}>
-        <AlertDialogContent>
-          <AlertDialogTitle>Uninstall Extension Pack</AlertDialogTitle>
-          <AlertDialogDescription>
-            <p class="mb-1">Are you sure you want to uninstall</p>
-            <p class="font-medium text-foreground mb-4">{props.pack.displayName}?</p>
-            <p class="text-muted-foreground text-xs">
-              You will need to restart VS Code for the change to take effect.
-            </p>
-          </AlertDialogDescription>
-          <div class="flex justify-end gap-3 mt-4">
-            <Button variant="outline" onClick={() => setShowUninstallConfirm(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmUninstall}>
-              Uninstall
-            </Button>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
+      <UninstallPackDialog
+        open={showUninstallConfirm()}
+        onOpenChange={setShowUninstallConfirm}
+        displayName={props.pack.displayName}
+        onConfirm={handleConfirmUninstall}
+      />
     </Card>
   )
 }

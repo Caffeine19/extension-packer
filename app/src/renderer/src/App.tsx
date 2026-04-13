@@ -28,7 +28,7 @@ const Layout: Component<RouteSectionProps> = (props) => {
   const ignoredExtensionsCount = () => ignoredExtensions().length
 
   return (
-    <div class="h-screen flex">
+    <div class="flex h-screen w-screen overflow-hidden bg-black/20">
       {/* Sidebar */}
       <Sidebar
         extensionsCount={extensionsCount}
@@ -36,8 +36,12 @@ const Layout: Component<RouteSectionProps> = (props) => {
         ignoredExtensionsCount={ignoredExtensionsCount}
       />
 
-      {/* Main Content */}
-      {props.children}
+      <div class="flex flex-1 overflow-hidden py-2 pr-2">
+        <div class="bg-background flex flex-1 flex-col overflow-hidden rounded-lg border border-zinc-600/50">
+          {props.children}
+        </div>
+      </div>
+      {/* Main Content - inset panel */}
     </div>
   )
 }

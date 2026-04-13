@@ -63,22 +63,22 @@ const IgnoredExtensionsView: Component<IgnoredExtensionsViewProps> = (props) => 
   }
 
   return (
-    <div class="flex flex-col h-full">
-      <div class="shrink-0 flex flex-col gap-4">
-        <div class="flex items-center justify-between min-h-[40px]">
+    <div class="flex h-full flex-col">
+      <div class="flex shrink-0 flex-col gap-4">
+        <div class="flex min-h-[40px] items-center justify-between">
           <div>
             <h2 class="text-2xl font-bold tracking-tight">Ignored Extensions</h2>
-            <p class="text-sm text-muted-foreground mt-1">
+            <p class="text-muted-foreground mt-1 text-sm">
               Extensions that will not be available for adding to extension packs
             </p>
           </div>
           <div class="flex items-center gap-2">
-            <Badge variant="warning" round>
-              {filteredIgnoredExtensions().length} shown
+            <Badge variant="default" round>
+              {filteredIgnoredExtensions().length}
             </Badge>
             <Show when={searchQuery()}>
               <Badge variant="default" round>
-                {filteredIgnoredExtensions().length} of {props.ignoredExtensions.length} found
+                {filteredIgnoredExtensions().length} of {props.ignoredExtensions.length} Found
               </Badge>
             </Show>
           </div>
@@ -89,18 +89,18 @@ const IgnoredExtensionsView: Component<IgnoredExtensionsViewProps> = (props) => 
           <div class="flex items-center gap-3 pb-2">
             <TextField class="flex-1">
               <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i class="ph ph-magnifying-glass text-xl text-muted-foreground" />
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <i class="ph ph-magnifying-glass text-muted-foreground text-xl" />
                 </div>
                 <TextFieldInput
                   type="text"
                   placeholder="Search ignored extensions by ID..."
                   value={searchQuery()}
                   onInput={(e) => handleSearchInput(e.currentTarget.value)}
-                  class="pl-10 pr-10"
+                  class="pr-10 pl-10"
                 />
                 <Show when={searchQuery()}>
-                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                     <button
                       onClick={clearSearch}
                       class="text-muted-foreground hover:text-foreground focus:outline-none"
@@ -113,25 +113,26 @@ const IgnoredExtensionsView: Component<IgnoredExtensionsViewProps> = (props) => 
               </div>
             </TextField>
             <Button variant="secondary" size="sm" onClick={handleClearAll}>
+              <i class="ph ph-trash" style={{ 'font-size': '16px' }} />
               Clear All
             </Button>
           </div>
         </Show>
       </div>
 
-      <div class="flex-1 overflow-auto min-h-0 mt-6">
+      <div class="mt-6 min-h-0 flex-1 overflow-auto">
         <Show
           when={filteredIgnoredExtensions().length > 0}
           fallback={
-            <div class="text-center py-12">
+            <div class="py-12 text-center">
               <div class="text-muted-foreground mb-4">
-                <i class="ph ph-eye-slash text-7xl block mx-auto" />
+                <i class="ph ph-eye-slash mx-auto block text-7xl" />
               </div>
               <Show
                 when={searchQuery()}
                 fallback={
                   <div>
-                    <h3 class="text-lg font-medium mb-2">No ignored extensions</h3>
+                    <h3 class="mb-2 text-lg font-medium">No ignored extensions</h3>
                     <p class="text-muted-foreground">
                       Extensions marked as ignored will appear here and won't be available for
                       adding to packs
@@ -140,11 +141,12 @@ const IgnoredExtensionsView: Component<IgnoredExtensionsViewProps> = (props) => 
                 }
               >
                 <div>
-                  <h3 class="text-lg font-medium mb-2">No extensions match your search</h3>
+                  <h3 class="mb-2 text-lg font-medium">No extensions match your search</h3>
                   <p class="text-muted-foreground mb-4">
                     Try adjusting your search terms or clearing the search.
                   </p>
                   <Button onClick={clearSearch} size="sm">
+                    <i class="ph ph-x" style={{ 'font-size': '16px' }} />
                     Clear Search
                   </Button>
                 </div>
@@ -154,20 +156,20 @@ const IgnoredExtensionsView: Component<IgnoredExtensionsViewProps> = (props) => 
         >
           <Card>
             <div class="px-4 py-3">
-              <h3 class="text-sm font-medium text-muted-foreground">Ignored Extension IDs</h3>
+              <h3 class="text-muted-foreground text-sm font-medium">Ignored Extension IDs</h3>
             </div>
             <Separator />
-            <div class="divide-y divide-border">
+            <div class="divide-border divide-y">
               <For each={filteredIgnoredExtensions()}>
                 {(extensionId) => {
                   const info = () => props.extensionsMap?.[extensionId]
                   return (
-                    <div class="px-4 py-3 flex items-center justify-between hover:bg-muted/50">
-                      <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <div class="hover:bg-muted/50 flex items-center justify-between px-4 py-3">
+                      <div class="flex min-w-0 flex-1 items-center gap-3">
                         <Show
                           when={info()?.icon}
                           fallback={
-                            <div class="w-8 h-8 bg-muted rounded flex-shrink-0 flex items-center justify-center text-muted-foreground text-xs font-bold">
+                            <div class="bg-muted text-muted-foreground flex h-8 w-8 flex-shrink-0 items-center justify-center rounded text-xs font-bold">
                               {(info()?.name || extensionId).charAt(0).toUpperCase()}
                             </div>
                           }
@@ -175,12 +177,12 @@ const IgnoredExtensionsView: Component<IgnoredExtensionsViewProps> = (props) => 
                           <img
                             src={info()!.icon}
                             alt=""
-                            class="w-8 h-8 rounded flex-shrink-0 object-cover"
+                            class="h-8 w-8 flex-shrink-0 rounded object-cover"
                           />
                         </Show>
                         <div class="min-w-0">
-                          <p class="text-sm font-medium truncate">{info()?.name || extensionId}</p>
-                          <p class="text-xs text-muted-foreground font-mono truncate">
+                          <p class="truncate text-sm font-medium">{info()?.name || extensionId}</p>
+                          <p class="text-muted-foreground truncate font-mono text-xs">
                             {extensionId}
                           </p>
                         </div>
@@ -190,6 +192,7 @@ const IgnoredExtensionsView: Component<IgnoredExtensionsViewProps> = (props) => 
                         onClick={() => props.onRemoveFromIgnored(extensionId)}
                         class="ml-4 flex-shrink-0"
                       >
+                        <i class="ph ph-minus-circle" style={{ 'font-size': '16px' }} />
                         Remove
                       </Button>
                     </div>
@@ -209,7 +212,7 @@ const IgnoredExtensionsView: Component<IgnoredExtensionsViewProps> = (props) => 
             This will remove all {props.ignoredExtensions.length} extensions from the ignored list.
             They will become available for adding to extension packs again.
           </AlertDialogDescription>
-          <div class="flex justify-end gap-3 mt-4">
+          <div class="mt-4 flex justify-end gap-3">
             <Button variant="outline" onClick={() => setShowConfirmClear(false)}>
               Cancel
             </Button>

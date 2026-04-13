@@ -114,7 +114,7 @@ const PackFormDialog: Component<PackFormDialogProps> = (props) => {
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <div class="space-y-4">
+          <div class="space-y-6">
             {/* Keyword */}
             <TextField>
               <TextFieldLabel>Keyword</TextFieldLabel>
@@ -129,11 +129,11 @@ const PackFormDialog: Component<PackFormDialogProps> = (props) => {
             </TextField>
 
             {/* Auto-generated Display Name & Pack ID */}
-            <div class="space-y-2">
+            <div class="space-y-6">
               <TextField>
                 <TextFieldLabel>
                   Display Name
-                  <span class="font-normal ml-1 opacity-60">(auto)</span>
+                  <span class="ml-1 font-normal opacity-60">(auto)</span>
                 </TextFieldLabel>
                 <TextFieldInput
                   value={generatedDisplayName() || '—'}
@@ -144,12 +144,12 @@ const PackFormDialog: Component<PackFormDialogProps> = (props) => {
               <TextField>
                 <TextFieldLabel>
                   Pack ID
-                  <span class="font-normal ml-1 opacity-60">(auto)</span>
+                  <span class="ml-1 font-normal opacity-60">(auto)</span>
                 </TextFieldLabel>
                 <TextFieldInput
                   value={packName() || '—'}
                   readOnly
-                  class="bg-muted/50 font-mono text-muted-foreground"
+                  class="bg-muted/50 text-muted-foreground font-mono"
                 />
               </TextField>
             </div>
@@ -158,7 +158,7 @@ const PackFormDialog: Component<PackFormDialogProps> = (props) => {
             <TextField>
               <TextFieldLabel>
                 Description
-                <span class="font-normal ml-1 opacity-60">(optional)</span>
+                <span class="ml-1 font-normal opacity-60">(optional)</span>
               </TextFieldLabel>
               <TextFieldTextArea
                 value={description()}
@@ -171,7 +171,7 @@ const PackFormDialog: Component<PackFormDialogProps> = (props) => {
 
             {/* Error Message */}
             <Show when={error()}>
-              <div class="px-3 py-2 bg-destructive/10 border border-destructive/50 rounded-md text-destructive text-sm">
+              <div class="bg-destructive/10 border-destructive/50 text-destructive rounded-md border px-3 py-2 text-sm">
                 {error()}
               </div>
             </Show>
@@ -179,11 +179,20 @@ const PackFormDialog: Component<PackFormDialogProps> = (props) => {
 
           <DialogFooter class="mt-6">
             <Button type="button" variant="outline" onClick={() => props.onClose()}>
+              <i class="ph ph-x" style={{ 'font-size': '16px' }} />
               Cancel
             </Button>
             <Button type="submit" disabled={!isValid() || submitting()}>
-              <Show when={submitting()}>
-                <i class="ph ph-spinner animate-spin" />
+              <Show
+                when={submitting()}
+                fallback={
+                  <i
+                    class={isEditMode() ? 'ph ph-floppy-disk' : 'ph ph-plus'}
+                    style={{ 'font-size': '16px' }}
+                  />
+                }
+              >
+                <i class="ph ph-spinner animate-spin" style={{ 'font-size': '16px' }} />
               </Show>
               {submitting()
                 ? isEditMode()

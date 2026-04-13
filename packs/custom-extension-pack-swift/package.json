@@ -11,7 +11,9 @@
   ],
   "extensionPack": [
     "llvm-vs-code-extensions.lldb-dap",
-    "swiftlang.swift-vscode"
+    "swiftlang.swift-vscode",
+    "vadimcn.vscode-lldb",
+    "sweetpad.sweetpad"
   ],
   "icon": "icon.png"
 }

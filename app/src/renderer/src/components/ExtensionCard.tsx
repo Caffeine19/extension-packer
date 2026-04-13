@@ -96,7 +96,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
             <img
               src={props.extension.icon}
               alt={props.extension.name}
-              class="w-12 h-12 rounded-md object-center object-contain"
+              class="h-12 w-12 rounded-md object-contain object-center"
               onError={(e) => {
                 e.currentTarget.style.display = 'none'
                 const fallback = e.currentTarget.nextElementSibling as HTMLElement
@@ -105,7 +105,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
             />
           ) : null}
           <div
-            class="w-12 h-12 bg-primary/10 rounded-md flex items-center justify-center text-primary font-semibold"
+            class="bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-md font-semibold"
             style={{ display: props.extension.icon ? 'none' : 'flex' }}
           >
             {props.extension.name.charAt(0).toUpperCase()}
@@ -113,21 +113,21 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
         </div>
 
         {/* Extension Details */}
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 mb-1">
-            <h3 class="text-lg font-semibold truncate">{props.extension.name}</h3>
+        <div class="min-w-0 flex-1">
+          <div class="mb-1 flex items-center gap-2">
+            <h3 class="truncate text-lg font-semibold">{props.extension.name}</h3>
             {props.extension.isIgnored && (
               <Badge variant="warning" round>
                 Ignored
               </Badge>
             )}
             {props.extension.preRelease && (
-              <Badge variant="warning" round>
+              <Badge variant="default" round>
                 Pre-release
               </Badge>
             )}
             {props.extension.preview && (
-              <Badge variant="warning" round>
+              <Badge variant="default" round>
                 Preview
               </Badge>
             )}
@@ -138,17 +138,20 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
             )}
           </div>
 
-          <p class="text-sm text-muted-foreground mb-2">by {getPublisherName()}</p>
+          <p class="text-muted-foreground mb-2 text-sm">by {getPublisherName()}</p>
 
-          <div class="flex items-center gap-4 text-sm text-muted-foreground">
+          <div class="text-muted-foreground flex items-center gap-4 text-sm">
             <span>v{props.extension.version}</span>
             <span>Installed: {formatDate(props.extension.installedTimestamp)}</span>
           </div>
 
+          <p class="text-muted-foreground mt-2 truncate text-sm" title={props.extension.id}>
+            ID: {props.extension.id}
+          </p>
           {/* Pack Tags */}
           <Show when={getPacksContainingExtension().length > 0}>
             <div class="mt-2 flex flex-wrap items-center gap-1">
-              <span class="text-xs text-muted-foreground mr-1">In packs:</span>
+              <span class="text-muted-foreground mr-1 text-sm">In packs:</span>
               <For each={getPacksContainingExtension()}>
                 {(pack) => (
                   <Badge variant="secondary" round class="text-[10px]">
@@ -158,38 +161,10 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
               </For>
             </div>
           </Show>
-
-          <p class="text-xs text-muted-foreground mt-2 truncate" title={props.extension.id}>
-            ID: {props.extension.id}
-          </p>
         </div>
 
         {/* Action Buttons */}
-        <div class="flex flex-col gap-2 flex-shrink-0">
-          {/* Ignore Button */}
-          <Tooltip>
-            <TooltipTrigger
-              as={(p: Record<string, unknown>) => (
-                <Button
-                  {...p}
-                  variant={props.extension.isIgnored ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={handleToggleIgnore}
-                >
-                  {props.extension.isIgnored ? (
-                    <i class="ph ph-eye" />
-                  ) : (
-                    <i class="ph ph-eye-slash" />
-                  )}
-                  {props.extension.isIgnored ? 'Unignore' : 'Ignore'}
-                </Button>
-              )}
-            />
-            <TooltipContent>
-              {props.extension.isIgnored ? 'Remove from ignored list' : 'Add to ignored list'}
-            </TooltipContent>
-          </Tooltip>
-
+        <div class="flex flex-shrink-0 gap-2 self-end">
           {/* Add to Pack Dropdown */}
           <Show
             when={
@@ -200,8 +175,8 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
               <DropdownMenuTrigger
                 as={(p: Record<string, unknown>) => (
                   <Button {...p} size="sm" class="w-full">
-                    <i class="ph ph-plus" />
-                    Add to Pack
+                    <i class="ph ph-package" style={{ 'font-size': '16px' }} />
+                    Moveto Pack
                   </Button>
                 )}
               />
@@ -215,11 +190,11 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
                       disabled={isExtensionInPack(pack)}
                       class="flex items-center justify-between"
                     >
-                      <div class="flex items-center gap-2 flex-1 min-w-0">
+                      <div class="flex min-w-0 flex-1 items-center gap-2">
                         <Show
                           when={pack.icon}
                           fallback={
-                            <div class="w-6 h-6 bg-muted rounded flex-shrink-0 flex items-center justify-center text-muted-foreground text-[9px] font-bold">
+                            <div class="bg-muted text-muted-foreground flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-[9px] font-bold">
                               {pack.displayName.charAt(0).toUpperCase()}
                             </div>
                           }
@@ -227,13 +202,13 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
                           <img
                             src={pack.icon}
                             alt=""
-                            class="w-6 h-6 rounded flex-shrink-0 object-cover"
+                            class="h-6 w-6 flex-shrink-0 rounded object-cover"
                           />
                         </Show>
                         <div class="min-w-0">
                           <div class="truncate font-medium">
                             {extractPackKeyword(pack.displayName)}{' '}
-                            <span class="text-xs text-muted-foreground font-normal">
+                            <span class="text-muted-foreground text-xs font-normal">
                               ({pack.extensionPack.length})
                             </span>
                           </div>
@@ -248,10 +223,29 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
               </DropdownMenuContent>
             </DropdownMenu>
           </Show>
-
-          <Show when={props.extension.isIgnored}>
-            <div class="text-xs text-muted-foreground text-center italic">Ignored extension</div>
-          </Show>
+          {/* Ignore Button */}
+          <Tooltip>
+            <TooltipTrigger
+              as={(p: Record<string, unknown>) => (
+                <Button
+                  {...p}
+                  variant={props.extension.isIgnored ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={handleToggleIgnore}
+                >
+                  {props.extension.isIgnored ? (
+                    <i class="ph ph-eye" style={{ 'font-size': '16px' }} />
+                  ) : (
+                    <i class="ph ph-eye-slash" style={{ 'font-size': '16px' }} />
+                  )}
+                  {props.extension.isIgnored ? 'Unignore' : 'Ignore'}
+                </Button>
+              )}
+            />
+            <TooltipContent>
+              {props.extension.isIgnored ? 'Remove from ignored list' : 'Add to ignored list'}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </Card>

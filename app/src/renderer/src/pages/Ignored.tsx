@@ -21,8 +21,8 @@ const Ignored: Component = () => {
   })
 
   return (
-    <div class="flex-1 flex flex-col overflow-hidden bg-background">
-      <main class="flex-1 flex flex-col overflow-hidden p-6 pt-4">
+    <div class="bg-background flex flex-1 flex-col overflow-hidden">
+      <main class="flex flex-1 flex-col overflow-hidden p-6 pt-4">
         <IgnoredExtensionsView
           ignoredExtensions={ignoredExtensions()}
           onRemoveFromIgnored={handleRemoveFromIgnored}

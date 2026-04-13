@@ -20,7 +20,8 @@
     "ms-toolsai.vscode-jupyter-slideshow",
     "ms-toolsai.jupyter-renderers",
     "ms-toolsai.jupyter-keymap",
-    "ms-toolsai.jupyter"
+    "ms-toolsai.jupyter",
+    "ms-python.pylint"
   ],
   "icon": "icon.png"
 }
